@@ -148,8 +148,9 @@ class Dataset(object):
 
     def get_infos(self):
         '''yields predict_info, get_loss_info pairs'''
-        for feature_vector, label in self.feature_vectors():
-            yield feature_vector, lambda weights: self.loss_func(weights, feature_vector, label)
+        for index in xrange(self.dataset_size):
+            yield self.feature_vectors[index], \
+            lambda weights: self.loss_func(weights, self.feature_vectors[index], self.labels[index])
 
 
 def load_libsvm_dataset(filename, name=None, problem_type='regression', \
