@@ -104,7 +104,6 @@ class Dataset(object):
         self.feature_vectors = feature_vectors
         self.labels = labels
         self.dataset_size = np.shape(self.feature_vectors)[0]
-        self.shape = np.shape(self.feature_vectors[0])
 
         if permute:
             self.feature_vectors, self.labels = permute_dataset(self.feature_vectors, self.labels)
@@ -119,10 +118,11 @@ class Dataset(object):
                 self.labels[example_index] = relabeling[self.labels[example_index]]
         if self.problem_type == 'classification' and self.num_classes is None:
             self.num_classes = np.int(np.max(self.labels)) + 1
-        self.wshape = (self.num_classes, np.shape(self.feature_vectors)[1])
+
+        self.shape = (self.num_classes, np.shape(self.feature_vectors)[1])
 
         if self.problem_type == 'regression':
-            self.wshape = (1, np.shape(self.feature_vectors)[1])
+            self.shape = (1, np.shape(self.feature_vectors)[1])
             self.num_classes = None
 
         self.current_index = 0
@@ -178,14 +178,17 @@ def multiclass_hinge_loss(weights, feature_vector, label):
         pass
     prediction_scores = np.dot(weights, feature_vector)
     sorted_predictions = list(np.argsort(prediction_scores))
-    if sorted_predictions[-1] != label:
+    best_prediction = sorted_predictions[-1]
+    if best_prediction != label:
         true_loss = 1.0
     else:
         true_loss = 0.0
     try:
-        sorted_predictions.remove(np.int(label))
+        sorted_predictions.remove(int(label))
     except:
         print 'predictions: ', prediction_scores
+        print 'weights:', weights
+        print 'feature vector:', feature_vector
         print 'label: ', label
         raise
     second_best_prediction = int(sorted_predictions[-1])
