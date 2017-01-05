@@ -130,7 +130,6 @@ class FreeExp(bm.Learner):
         self.sum_gradients += gradient
         grad_norm = np.abs(gradient)
         sum_grad_norm = np.abs(self.sum_gradients)
-        self.old_L
 
         self.accumulated_regret, new_one_over_eta_squared = \
             update_learning_rate(self.accumulated_regret, \
@@ -153,5 +152,6 @@ class FreeExp(bm.Learner):
         default_string = super(FreeExp, self).get_status()
         increasing_learning_rates = \
             '1/eta^2: %f, 1/eta^2 without increasing learning rates: %f' % \
-            (np.average(self.one_over_eta), np.average(self.one_over_eta_squared_without_increases))
+            (np.average(self.one_over_eta_squared), \
+                np.average(self.one_over_eta_squared_without_increases))
         return default_string + ' ' + increasing_learning_rates
