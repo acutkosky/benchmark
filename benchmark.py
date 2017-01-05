@@ -233,7 +233,7 @@ def run_learner(learner, dataset, status_interval=30):
 
         if time.time() > last_status_time + status_interval:
             last_status_time = time.time()
-            print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time)
+            print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time),
             sys.stdout.flush()
     print '\nDone!'
     return {'learner': learner.name, \
