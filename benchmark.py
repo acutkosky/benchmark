@@ -76,6 +76,7 @@ class LazyDataset(object):
             return self.name
 
         if self.dataset is None:
+            print 'Loading Dataset ' + self.name + '...'
             self.dataset = self.loader()
             print 'Loaded Dataset '+self.name
         return getattr(self.dataset, name)
