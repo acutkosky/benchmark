@@ -220,7 +220,7 @@ def run_learner(learner, dataset, status_interval=30):
     start_time = time.time()
     losses = []
     total_loss = 0
-    for predict_info, get_loss_info in dataset:
+    for predict_info, get_loss_info in dataset.get_infos():
         loss_info = get_loss_info(learner.predict(predict_info))
         losses.append(loss_info['loss'])
         total_loss += loss_info['loss']
