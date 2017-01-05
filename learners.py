@@ -8,7 +8,7 @@ import benchmark as bm
 EPSILON = 0.0000000001
 
 class OGD(bm.Learner):
-    '''Online (sub-)Gradient Descent
+    '''Online (sub)Gradient Descent
     hyperparmeter eta is the learning rate'''
 
     def __init__(self, shape, hyperparameters=None):
@@ -26,6 +26,10 @@ class OGD(bm.Learner):
         gradient = loss_info['gradient']
         self.parameter -= self.eta * gradient
         return
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['eta']
 
 class AdaGrad(bm.Learner):
     '''AdaGrad learner.
@@ -52,6 +56,10 @@ class AdaGrad(bm.Learner):
         self.sum_gradient_squared += gradient**2
 
         self.parameter -= self.D * gradient / np.sqrt(self.sum_gradient_squared)
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['D']
 
 
 def freeexp_reg(weights, scaling):

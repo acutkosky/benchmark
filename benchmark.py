@@ -9,6 +9,8 @@ import os
 import numpy as np
 from sklearn.datasets import load_svmlight_file
 
+import cachelog
+
 class Learner(object):
     '''Base class for building online learners'''
     def __init__(self, name, hyperparameters):
@@ -46,6 +48,10 @@ class Learner(object):
         '''
         return self.parameter
 
+    @staticmethod
+    def hyperparameter_names():
+        return []
+
     def get_status(self):
         '''return a printable string describing the status of the learner'''
         if self.count == 0:
@@ -56,7 +62,7 @@ class Learner(object):
                 self.total_gradient_norm/self.count)
 
 
-class Lazlabelsset(object):
+class LazyDataset(object):
     '''Behaves like an object of class Dataset, but
     doesn't load data until accessed'''
 
@@ -66,20 +72,23 @@ class Lazlabelsset(object):
         self.dataset = None
 
     def __getattr__(self, name):
+        if name == 'name':
+            return self.name
+
         if self.dataset is None:
             self.dataset = self.loader()
             print 'Loaded Dataset '+self.name
         return getattr(self.dataset, name)
 
-def permute_dataset(examples, labels):
+def permute_dataset(feature_vectors, labels):
     '''randomly permutes a dataset'''
-    dataset_size = np.shape(examples)[0]
+    dataset_size = np.shape(feature_vectors)[0]
     permutation = np.random.permutation(dataset_size)
-    return examples[permutation], labels[permutation]
+    return feature_vectors[permutation], labels[permutation]
 
 class Dataset(object):
     '''Stores a dataset and provides access via loss functions'''
-    def __init__(self, name, examples, labels, problem_type='regression', \
+    def __init__(self, name, feature_vectors, labels, problem_type='regression', \
             permute=False, num_classes=None, process_labels=False):
         self.name = name
         self.problem_type = problem_type
@@ -91,12 +100,13 @@ class Dataset(object):
         else:
             self.loss_func = multiclass_hinge_loss
 
-        self.examples = examples
+        self.feature_vectors = feature_vectors
         self.labels = labels
-        self.dataset_size = np.shape(self.examples)[0]
+        self.dataset_size = np.shape(self.feature_vectors)[0]
+        self.shape = np.shape(self.feature_vectors[0])
 
         if permute:
-            self.examples, self.labels = permute_dataset(self.examples, self.labels)
+            self.feature_vectors, self.labels = permute_dataset(self.feature_vectors, self.labels)
 
         if self.problem_type == 'classification' and process_labels:
             relabeling = {}
@@ -108,10 +118,10 @@ class Dataset(object):
                 self.labels[example_index] = relabeling[self.labels[example_index]]
         if self.problem_type == 'classification' and self.num_classes is None:
             self.num_classes = np.int(np.max(self.labels)) + 1
-        self.wshape = (self.num_classes, np.shape(self.examples)[1])
+        self.wshape = (self.num_classes, np.shape(self.feature_vectors)[1])
 
         if self.problem_type == 'regression':
-            self.wshape = (1, np.shape(self.examples)[1])
+            self.wshape = (1, np.shape(self.feature_vectors)[1])
             self.num_classes = None
 
         self.current_index = 0
@@ -124,21 +134,21 @@ class Dataset(object):
 
     def get_example(self):
         '''gets the next example in the dataset, looping to beginning if needed'''
-        features = self.examples[self.current_index]
+        feature_vector = self.feature_vectors[self.current_index]
         label = self.labels[self.current_index]
         self.current_index = (self.current_index+1) % (self.dataset_size)
 
-        return features, label
+        return feature_vector, label
 
     def examples(self):
         '''yield each example in the dataset in turn'''
         for index in xrange(self.dataset_size):
-            yield self.examples[index], self.labels[index]
+            yield self.feature_vectors[index], self.labels[index]
 
     def get_infos(self):
         '''yields predict_info, get_loss_info pairs'''
-        for features, label in self.examples():
-            yield features, lambda weights: self.loss_func(weights, features, label)
+        for feature_vector, label in self.feature_vectors():
+            yield feature_vector, lambda weights: self.loss_func(weights, feature_vector, label)
 
 
 def load_libsvm_dataset(filename, name=None, problem_type='regression', \
@@ -148,23 +158,23 @@ def load_libsvm_dataset(filename, name=None, problem_type='regression', \
     if name is None:
         name = os.path.basename(filename)
 
-    return Lazlabelsset(name, lambda: Dataset(name, *load_svmlight_file(filename), \
+    return LazyDataset(name, lambda: Dataset(name, *load_svmlight_file(filename), \
         problem_type=problem_type, permute=permute, \
         num_classes=num_classes, process_labels=True))
 
-def multiclass_hinge_loss(weights, features, label):
+def multiclass_hinge_loss(weights, feature_vector, label):
     '''computes multiclass hinge loss and its gradient
 
         weights: input prediction matrix
-        features: input example to predict class for
+        feature_vector: input example to predict class for
         label: target class'''
 
 
     try:
-        features = features.toarray()[0]
+        feature_vector = feature_vector.toarray()[0]
     except:
         pass
-    prediction_scores = np.dot(weights, features)
+    prediction_scores = np.dot(weights, feature_vector)
     sorted_predictions = list(np.argsort(prediction_scores))
     if sorted_predictions[-1] != label:
         true_loss = 1.0
@@ -183,21 +193,21 @@ def multiclass_hinge_loss(weights, features, label):
     hinge_loss = max(0.0, \
         1.0 + prediction_scores[second_best_prediction] - prediction_scores[label])
     if hinge_loss != 0:
-        gradient[second_best_prediction] = features
-        gradient[label] = -features
+        gradient[second_best_prediction] = feature_vector
+        gradient[label] = -feature_vector
     return {'loss': true_loss, 'gradient': gradient, 'hinge_loss': hinge_loss}
 
 
-def l2_loss(weights, features, label):
+def l2_loss(weights, feature_vector, label):
     '''computes squared error (w*x-y)^2 and its gradient with respect to w'''
     try:
-        features = features.toarray()[0]
+        feature_vector = feature_vector.toarray()[0]
     except:
         pass
 
-    prediction = features.dot(weights.T).flatten()[0]
+    prediction = feature_vector.dot(weights.T).flatten()[0]
     loss = (0.5*(prediction-label)**2).flatten()[0]
-    gradient = (prediction-label)*features
+    gradient = (prediction-label)*feature_vector
     return {'loss': loss, 'gradient': gradient}
 
 
@@ -219,8 +229,59 @@ def run_learner(learner, dataset, status_interval=30):
         if time.time() > start_time + status_interval:
             print "%s\r" % (learner.get_status())
             sys.stdout.flush()
-
+    print '\nDone!'
     return {'learner': learner.name, \
             'losses': losses, \
             'total_loss': total_loss, \
             'hyperparameters': learner.hyperparameters}
+
+
+def search_hyperparameters(learner_factory, dataset, search_list):
+    '''
+    tries many hyperparameter settings for a learner on a dataset.
+    search_dict is an iterable collection of hyperparameter dicts to input
+    into learner.
+    '''
+
+    cachified_run_learner = cachelog.cachify(run_learner)
+
+    for hyperparameters in search_list:
+        cachified_run_learner(learner_factory(dataset.shape, hyperparameters), dataset)
+
+def generate_default_search_list(learner_factory):
+    '''
+    yields all possible hyperparameter settings in a default
+    logarithmically spaced grid.
+    '''
+    keys = learner_factory.hyperparameter_names()
+    default_settings = np.power(10, np.arange(-5, 4.5, 0.5))
+    current_indices = {key: 0 for key in keys}
+    total_count = len(default_settings)**len(keys)
+    count = 0
+    while count < total_count:
+        for key in keys:
+            current_indices[key] = (current_indices[key] + 1) % len(default_settings)
+            if current_indices[key] != 0:
+                break
+        yield {key: default_settings[current_indices[key]] for key in keys}
+        count += 1
+
+def run_all_datasets(directory, problem_type, learner_factories):
+    '''
+    given a directoy of libsvm datasets and some learners, runs hyperparameter searches
+    on all the learners on all the datasets in the directory.
+    '''
+    filenames = [item for item in os.listdir(directory) \
+        if os.path.isfile(os.path.join(directory, item))]
+
+    try:
+        filenames.remove('.')
+        filenames.remove('..')
+    except:
+        pass
+
+    for filename in filenames:
+        dataset = load_libsvm_dataset(os.path.join(directory, filename), problem_type=problem_type, permute=False)
+        for learner_factory in learner_factories:
+            search_list = generate_default_search_list(learner_factory)
+            search_hyperparameters(learner_factory, dataset, search_list)
