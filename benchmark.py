@@ -222,6 +222,7 @@ def run_learner(learner, dataset, status_interval=30):
     every status_interval seconds'''
     print 'Uncached result - running experiment'
     start_time = time.time()
+    last_status_time = 0
     losses = []
     total_loss = 0
     for predict_info, get_loss_info in dataset.get_infos():
@@ -231,8 +232,9 @@ def run_learner(learner, dataset, status_interval=30):
 
         learner.update(loss_info)
 
-        if time.time() > start_time + status_interval:
-            print "%s\r" % (learner.get_status())
+        if time.time() > last_status_time + status_interval:
+            last_status_time = time.time()
+            print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time)
             sys.stdout.flush()
     print '\nDone!'
     return {'learner': learner.name, \
