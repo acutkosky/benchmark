@@ -263,7 +263,8 @@ def generate_default_search_list(learner_factory):
     default_settings = np.power(10, np.arange(-5, 4.5, 0.5))
     current_indices = {key: 0 for key in keys}
     total_count = len(default_settings)**len(keys)
-    count = 0
+    count = 1
+    yield {key: default_settings[current_indices[key]] for key in keys}
     while count < total_count:
         for key in keys:
             current_indices[key] = (current_indices[key] + 1) % len(default_settings)
