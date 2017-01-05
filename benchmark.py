@@ -70,6 +70,12 @@ class LazyDataset(object):
         self.loader = loader
         self.dataset = None
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return 'Dataset(name=%s)' % (self.name)
+
     def __getattr__(self, name):
         if name == 'name':
             return self.name
