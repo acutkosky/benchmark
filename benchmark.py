@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.datasets import load_svmlight_file
 
 class Learner(object):
-    '''Base class for building onlien learners'''
+    '''Base class for building online learners'''
     def __init__(self, name, hyperparameters):
         self.name = name
         self.hyperparameters = hyperparameters
@@ -56,7 +56,7 @@ class Learner(object):
                 self.total_gradient_norm/self.count)
 
 
-class Lazy_dataset(object):
+class Lazlabelsset(object):
     '''Behaves like an object of class Dataset, but
     doesn't load data until accessed'''
 
@@ -71,15 +71,15 @@ class Lazy_dataset(object):
             print 'Loaded Dataset '+self.name
         return getattr(self.dataset, name)
 
-def permute_dataset(x_vals, y_vals):
+def permute_dataset(examples, labels):
     '''randomly permutes a dataset'''
-    dataset_size = np.shape(x_vals)[0]
+    dataset_size = np.shape(examples)[0]
     permutation = np.random.permutation(dataset_size)
-    return x_vals[permutation], y_vals[permutation]
+    return examples[permutation], labels[permutation]
 
 class Dataset(object):
     '''Stores a dataset and provides access via loss functions'''
-    def __init__(self, name, x_data, y_data, problem_type='regression', \
+    def __init__(self, name, examples, labels, problem_type='regression', \
             permute=False, num_classes=None, process_labels=False):
         self.name = name
         self.problem_type = problem_type
@@ -91,27 +91,27 @@ class Dataset(object):
         else:
             self.loss_func = multiclass_hinge_loss
 
-        self.x_data = x_data
-        self.y_data = y_data
-        self.dataset_size = np.shape(self.x_data)[0]
+        self.examples = examples
+        self.labels = labels
+        self.dataset_size = np.shape(self.examples)[0]
 
         if permute:
-            self.x_data, self.y_data = permute_dataset(self.x_data, self.y_data)
+            self.examples, self.labels = permute_dataset(self.examples, self.labels)
 
         if self.problem_type == 'classification' and process_labels:
             relabeling = {}
             count = 0
-            for class_index in np.unique(self.y_data):
+            for class_index in np.unique(self.labels):
                 relabeling[class_index] = count
                 count += 1
-            for example_index in xrange(len(self.y_data)):
-                self.y_data[example_index] = relabeling[self.y_data[example_index]]
+            for example_index in xrange(len(self.labels)):
+                self.labels[example_index] = relabeling[self.labels[example_index]]
         if self.problem_type == 'classification' and self.num_classes is None:
-            self.num_classes = np.int(np.max(self.y_data)) + 1
-        self.wshape = (self.num_classes, np.shape(self.x_data)[1])
+            self.num_classes = np.int(np.max(self.labels)) + 1
+        self.wshape = (self.num_classes, np.shape(self.examples)[1])
 
         if self.problem_type == 'regression':
-            self.wshape = (1, np.shape(self.x_data)[1])
+            self.wshape = (1, np.shape(self.examples)[1])
             self.num_classes = None
 
         self.current_index = 0
@@ -124,21 +124,21 @@ class Dataset(object):
 
     def get_example(self):
         '''gets the next example in the dataset, looping to beginning if needed'''
-        x_val = self.x_data[self.current_index]
-        y_val = self.y_data[self.current_index]
+        features = self.examples[self.current_index]
+        label = self.labels[self.current_index]
         self.current_index = (self.current_index+1) % (self.dataset_size)
 
-        return x_val, y_val
+        return features, label
 
     def examples(self):
         '''yield each example in the dataset in turn'''
         for index in xrange(self.dataset_size):
-            yield self.x_data[index], self.y_data[index]
+            yield self.examples[index], self.labels[index]
 
     def get_infos(self):
         '''yields predict_info, get_loss_info pairs'''
-        for x_val, y_val in self.examples():
-            yield x_val, lambda weights: self.loss_func(weights, x_val, y_val)
+        for features, label in self.examples():
+            yield features, lambda weights: self.loss_func(weights, features, label)
 
 
 def load_libsvm_dataset(filename, name=None, problem_type='regression', \
@@ -148,7 +148,7 @@ def load_libsvm_dataset(filename, name=None, problem_type='regression', \
     if name is None:
         name = os.path.basename(filename)
 
-    return Lazy_dataset(name, lambda: Dataset(name, *load_svmlight_file(filename), \
+    return Lazlabelsset(name, lambda: Dataset(name, *load_svmlight_file(filename), \
         problem_type=problem_type, permute=permute, \
         num_classes=num_classes, process_labels=True))
 
@@ -214,7 +214,7 @@ def run_learner(learner, dataset, status_interval=30):
         losses.append(loss_info['loss'])
         total_loss += loss_info['loss']
 
-        learner.udpate(loss_info)
+        learner.update(loss_info)
 
         if time.time() > start_time + status_interval:
             print "%s\r" % (learner.get_status())
