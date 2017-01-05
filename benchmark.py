@@ -22,11 +22,10 @@ class Learner(object):
         self.total_gradient_norm = 0
 
     def __str__(self):
-        return '%s;parameters=%s' % (self.name, str(self.hyperparameters))
+        return self.__repr__()
 
     def __repr__(self):
-        return 'Learner(Name: %s, Status: %s, hyperparameters: %s)' % \
-            (self.name, self.get_status(), self.hyperparameters.__repr__())
+        return '%s;parameters=%s' % (self.name, str(self.hyperparameters))
 
     def update(self, loss_info):
         '''updates model parameters given loss_info dict.
