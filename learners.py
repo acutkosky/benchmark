@@ -68,7 +68,7 @@ def freeexp_reg(weights, scaling):
     return np.sqrt(5)*((abs_weights + 1)*np.log(abs_weights + 1) - abs_weights)
 
 def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
-    weights, gradient, sum_gradients, psi):
+    weights, gradient, sum_gradients, scaling, psi):
     '''Computes aggressive learning rate updates by measuring
     discrepencies between regret bounds.
     Will increase learning rates without compromising worst-case
@@ -89,9 +89,9 @@ def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
             * np.minimum(old_L, grad_norm), \
         old_L * sum_grad_norm))
 
-    new_weights_plus_max = -np.sign(sum_gradients) \
+    new_weights_plus_max = -np.sign(sum_gradients)/scaling \
         * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
-    new_weights_plus_min = -np.sign(sum_gradients) \
+    new_weights_plus_min = -np.sign(sum_gradients)/scaling \
         * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
@@ -130,8 +130,8 @@ class FreeExp(bm.Learner):
 
         self.parameter = np.zeros(shape)
 
-        scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
-        self.psi = lambda weights: freeexp_reg(weights, scaling)
+        self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
+        self.psi = lambda weights: freeexp_reg(weights, self.scaling)
 
     def update(self, loss_info):
         '''update parameters'''
@@ -145,7 +145,7 @@ class FreeExp(bm.Learner):
         self.accumulated_regret, new_one_over_eta_squared = \
             update_learning_rate(self.accumulated_regret, \
                 self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.sum_gradients, self.psi)
+                self.parameter, gradient, self.sum_gradients, self.scaling, self.psi)
 
         self.L = np.maximum(self.L, np.abs(gradient))
 
@@ -155,7 +155,7 @@ class FreeExp(bm.Learner):
 
         self.one_over_eta_squared = new_one_over_eta_squared
 
-        self.parameter = -np.sign(self.sum_gradients) \
+        self.parameter = -np.sign(self.sum_gradients)/self.scaling \
             * (np.exp(sum_grad_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
 
     def get_status(self):
