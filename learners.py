@@ -162,7 +162,7 @@ class FreeExp(bm.Learner):
         '''return a printable string describing the status of the learner'''
         default_string = super(FreeExp, self).get_status()
         increasing_learning_rates = \
-            '1/eta^2: %f, 1/eta^2 without increasing learning rates: %f' % \
-            (np.average(self.one_over_eta_squared), \
-                np.average(self.one_over_eta_squared_without_increases))
+            '1/eta: %f, 1/eta without increasing learning rates: %f' % \
+            (np.average(np.sqrt(self.one_over_eta_squared)), \
+                np.average(np.sqrt(self.one_over_eta_squared_without_increases)))
         return default_string + ' ' + increasing_learning_rates

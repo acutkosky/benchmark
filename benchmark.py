@@ -56,7 +56,7 @@ class Learner(object):
         if self.count == 0:
             return 'Not Started'
         else:
-            return '%s: Hyperparameters: %s, Updates: %d, Average loss: %f, Average Gradient: %f' % \
+            return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f' % \
             (self.name, str(self.hyperparameters), self.count, self.total_loss/(self.count), \
                 self.total_gradient_norm/self.count)
 
