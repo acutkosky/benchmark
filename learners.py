@@ -73,7 +73,7 @@ def freeexp_sphere_reg(w):
     return np.sqrt(5)*((norm_w + 1)*np.log(norm_w + 1) - norm_w)
 
 def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared, \
-    weights, gradient, sum_gradients, psi):
+    weights, gradient, gradients_sum, psi):
     '''Computes aggressive learning rate updates by measuring
     discrepencies between regret bounds.
     Will increase learning rates without compromising worst-case
@@ -85,21 +85,21 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
     if old_L == 0:
         old_L = L
 
-    sum_grad_norm = np.linalg.norm(sum_gradients)
+    gradients_sum_norm = np.linalg.norm(gradients_sum)
     one_over_eta_plus_max = np.sqrt(np.maximum( \
             np.maximum(one_over_eta_squared - 2 * grad_norm \
                 * np.minimum(old_L, grad_norm), \
-            L * sum_grad_norm), \
+            L * gradients_sum_norm), \
         2 * grad_norm**2 + EPSILON))
 
     one_over_eta_plus_min = np.sqrt(np.maximum(one_over_eta_squared + 2 * grad_norm \
             * np.minimum(old_L, grad_norm), \
-        old_L * sum_grad_norm))
+        old_L * gradients_sum_norm))
 
-    new_weights_plus_max = - (sum_gradients)/(sum_grad_norm + EPSILON) \
-        * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
-    new_weights_plus_min = - (sum_gradients)/(sum_grad_norm + EPSILON) \
-        * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
+    new_weights_plus_max = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
+        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
+    new_weights_plus_min = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
+        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -112,7 +112,7 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
     #Start with a Very Safe Learning Rate Update
     new_accumulated_regret = accumulated_regret_min
     new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
-        L * sum_grad_norm)
+        L * gradients_sum_norm)
 
     if accumulated_regret_max <= accumulated_regret_min:
         new_accumulated_regret = accumulated_regret_max
@@ -121,7 +121,7 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
     return new_accumulated_regret, new_one_over_eta_squared
 
 def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
-    weights, gradient, sum_gradients, scaling, psi):
+    weights, gradient, gradients_sum, scaling, psi):
     '''Computes aggressive learning rate updates by measuring
     discrepencies between regret bounds.
     Will increase learning rates without compromising worst-case
@@ -131,21 +131,21 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
     L = np.maximum(old_L, grad_norm)
     old_L[old_L==0] = L[old_L==0]
 
-    sum_grad_norm = np.abs(sum_gradients)
+    gradients_sum_norm = np.abs(gradients_sum)
     one_over_eta_plus_max = np.sqrt(np.maximum( \
             np.maximum(one_over_eta_squared - 2 * grad_norm \
                 * np.minimum(old_L, grad_norm), \
-            L * sum_grad_norm), \
+            L * gradients_sum_norm), \
         2 * grad_norm**2 + EPSILON))
 
     one_over_eta_plus_min = np.sqrt(np.maximum(one_over_eta_squared + 2 * grad_norm \
             * np.minimum(old_L, grad_norm), \
-        old_L * sum_grad_norm))
+        old_L * gradients_sum_norm))
 
-    new_weights_plus_max = -np.sign(sum_gradients)/scaling \
-        * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
-    new_weights_plus_min = -np.sign(sum_gradients)/scaling \
-        * (np.exp(sum_grad_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
+    new_weights_plus_max = -np.sign(gradients_sum)/scaling \
+        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
+    new_weights_plus_min = -np.sign(gradients_sum)/scaling \
+        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -158,7 +158,7 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
     #Start with a Very Safe Learning Rate Update
     new_accumulated_regret = accumulated_regret_min
     new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
-        L * sum_grad_norm)
+        L * gradients_sum_norm)
 
     increasable_indices = accumulated_regret_max <= accumulated_regret_min
     # Careful - we're overwriting accumulated_regret_min here!
@@ -177,7 +177,7 @@ class FreeExpSphere(bm.Learner):
         self.one_over_eta_squared_without_increases = 0
 
         self.L = 0
-        self.sum_gradients = 0
+        self.gradients_sum = 0
         self.accumulated_regret = 0
 
         self.parameter = np.zeros(shape)
@@ -189,25 +189,25 @@ class FreeExpSphere(bm.Learner):
         super(FreeExpSphere, self).update(loss_info)
 
         gradient = loss_info['gradient']
-        self.sum_gradients += gradient
+        self.gradients_sum += gradient
         grad_norm = np.linalg.norm(gradient)
-        sum_grad_norm = np.linalg.norm(self.sum_gradients)
+        gradients_sum_norm = np.linalg.norm(self.gradients_sum)
 
         self.accumulated_regret, new_one_over_eta_squared = \
             update_learning_rate_sphere(self.accumulated_regret, \
                 self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.sum_gradients, self.psi)
+                self.parameter, gradient, self.gradients_sum, self.psi)
 
         self.L = np.maximum(self.L, grad_norm)
 
         # compute a very safe learning rate update just for comparison
         self.one_over_eta_squared_without_increases = np.maximum(self.one_over_eta_squared \
-            + 2*grad_norm**2, self.L * sum_grad_norm)
+            + 2*grad_norm**2, self.L * gradients_sum_norm)
 
         self.one_over_eta_squared = new_one_over_eta_squared
 
-        self.parameter = - self.sum_gradients/(sum_grad_norm + EPSILON) \
-            * (np.exp(sum_grad_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
+        self.parameter = - self.gradients_sum/(gradients_sum_norm + EPSILON) \
+            * (np.exp(gradients_sum_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
@@ -228,7 +228,7 @@ class FreeExpDiag(bm.Learner):
         self.one_over_eta_squared_without_increases = np.zeros(shape)
 
         self.L = np.zeros(shape)
-        self.sum_gradients = np.zeros(shape)
+        self.gradients_sum = np.zeros(shape)
         self.accumulated_regret = np.zeros(shape)
 
         self.parameter = np.zeros(shape)
@@ -242,25 +242,25 @@ class FreeExpDiag(bm.Learner):
         super(FreeExpDiag, self).update(loss_info)
 
         gradient = loss_info['gradient']
-        self.sum_gradients += gradient
+        self.gradients_sum += gradient
         grad_norm = np.abs(gradient)
-        sum_grad_norm = np.abs(self.sum_gradients)
+        gradients_sum_norm = np.abs(self.gradients_sum)
 
         self.accumulated_regret, new_one_over_eta_squared = \
             update_learning_rate_diag(self.accumulated_regret, \
                 self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.sum_gradients, self.scaling, self.psi)
+                self.parameter, gradient, self.gradients_sum, self.scaling, self.psi)
 
         self.L = np.maximum(self.L, np.abs(gradient))
 
         # compute a very safe learning rate update just for comparison
         self.one_over_eta_squared_without_increases = np.maximum(self.one_over_eta_squared \
-            + 2*grad_norm**2, self.L * np.abs(sum_grad_norm))
+            + 2*grad_norm**2, self.L * np.abs(gradients_sum_norm))
 
         self.one_over_eta_squared = new_one_over_eta_squared
 
-        self.parameter = -np.sign(self.sum_gradients)/self.scaling \
-            * (np.exp(sum_grad_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
+        self.parameter = -np.sign(self.gradients_sum)/self.scaling \
+            * (np.exp(gradients_sum_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
@@ -282,5 +282,140 @@ class FreeExpScaledFeatures(FreeExpDiag):
         self.scaling = self.scaling * np.log(self.scaling + 1)
         self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling)
 
+class PiSTOLSphere(bm.Learner):
+    '''PiSTOL spherical learner'''
+
+    def __init__(self, shape, hyperparameters=None):
+        if hyperparameters is None:
+            hyperparameters = {'L': 1.0}
+        hyperparameters = {'L': hyperparameters['L']}
+        super(PiSTOLSphere, self).__init__('PiSTOLSphere', hyperparameters)
+        self.L = hyperparameters['L']
+        self.parameter = np.zeros(shape)
+        self.gradients_sum = np.zeros(shape)
+        self.gradients_norm_sum = 0
+        self.a = 2.25 * self.L
+        self.b = 1
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L']
+
+    def update(self, loss_info):
+        '''update parameters'''
+        super(PiSTOLSphere, self).update(loss_info)
+
+        gradient = loss_info['gradient']
+        self.gradients_sum += gradient
+        grad_norm = np.linalg.norm(gradient)
+        self.gradients_norm_sum += grad_norm
+        alpha = self.a * self.gradients_norm_sum
+        self.parameter = - self.gradients_sum * self.b / alpha \
+            * np.exp(self.gradients_norm_sum**2/ (2 * alpha))
+
+class PiSTOLDiag(bm.Learner):
+    '''PiSTOL diagonal learner'''
+    def __init__(self, shape, hyperparameters=None):
+        if hyperparameters is None:
+            hyperparameters = {'L': 1.0}
+        hyperparameters = {'L': hyperparameters['L']}
+        super(PiSTOLDiag, self).__init__('PiSTOLDiag', hyperparameters)
+        self.L = hyperparameters['L']
+        self.parameter = np.zeros(shape)
+        self.gradients_sum = np.zeros(shape)
+        self.gradients_norm_sum = np.zeros(shape)
+        self.a = 2.25 * self.L
+        self.b = 1
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L']
+
+    def update(self, loss_info):
+        '''update parameters'''
+        super(PiSTOLDiag, self).update(loss_info)
+
+        gradient = loss_info['gradient']
+        self.gradients_sum += gradient
+        grad_norm = np.abs(gradient)
+        self.gradients_norm_sum += grad_norm
+        alpha = self.a * self.gradients_norm_sum
+        self.parameter = - self.gradients_sum * self.b / alpha \
+            * np.exp(self.gradients_sum_norm**2/ (2 * alpha))
+
+class PiSTOLScale(PiSTOLDiag):
+    '''PiSTOL diagonal learner with features scaled by dimension'''
+    def __init__(self, shape, hyperparameters=None):
+        super(PiSTOLScale, self).__init__('PiSTOLDiag', shape, hyperparameters)
+        self.b = 1.0/len(self.parameter.flatten())
+
+class KTEstimatorSphere(bm.Learner):
+    '''coin-betting based estimator using KT potential'''
+    def __init__(self, shape, hyperparameters):
+        if hyperparameters is None:
+            hyperparameters = {'L': 1.0, 'eps': 1.0}
+        if 'eps' not in hyperparameters:
+            hyperparameters['eps'] = 1.0
+        hyperparameters = {'L': hyperparameters['L'], 'eps': hyperparameters['eps']}
+        super(KTEstimatorSphere, self).__init__('KTEstimatorSphere', hyperparameters)
+
+        self.L = hyperparameters['L']
+        self.eps = hyperparameters['eps']
+        self.parameter = np.zeros(shape)
+        self.loss_sum = 0
+        self.gradients_sum = np.zeros(shape)
+        self.t = 0
+
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L', 'eps']
+
+    def update(self, loss_info):
+        '''update parameters'''
+        super(KTEstimatorSphere, self).update(loss_info)
+        gradient = loss_info['gradient']
+        self.gradients_sum += gradient
+        self.loss_sum += np.sum((gradient * self.parameter).flatten())
+        self.t += 1
+        self.parameter = - self.gradients_sum/self.t * (self.eps - self.loss_sum)
+
+class KTEstimatorDiag(bm.Learner):
+    '''diagonal coin-betting based estimator using KT potential'''
+    def __init__(self, shape, hyperparameters):
+        if hyperparameters is None:
+            hyperparameters = {'L': 1.0, 'eps': 1.0}
+        if 'eps' not in hyperparameters:
+            hyperparameters['eps'] = 1.0
+        hyperparameters = {'L': hyperparameters['L'], 'eps': hyperparameters['eps']}
+        super(KTEstimatorDiag, self).__init__('KTEstimatorDiag', hyperparameters)
+
+        self.L = hyperparameters['L']
+        self.eps = hyperparameters['eps']
+        self.parameter = np.zeros(shape)
+        self.loss_sum = np.zeros(shape)
+        self.gradients_sum = np.zeros(shape)
+        self.t = 0
+
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L', 'eps']
+
+    def update(self, loss_info):
+        '''update parameters'''
+        super(KTEstimatorDiag, self).update(loss_info)
+        gradient = loss_info['gradient']
+        self.gradients_sum += gradient
+        self.loss_sum += gradient * self.parameter
+        self.t += 1
+        self.parameter = - self.gradients_sum/self.t * (self.eps - self.loss_sum)
+
 #set default use of FreeExp to be diag
 FreeExp = FreeExpDiag
+
+#set default use of PiSTOL to be diag
+PiSTOL = PiSTOLDiag
+
+#set default use of KTEstimator to be diag
+KTEstimator = KTEstimatorDiag
