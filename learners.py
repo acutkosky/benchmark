@@ -83,7 +83,7 @@ def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
             np.maximum(one_over_eta_squared - 2 * grad_norm \
                 * np.minimum(old_L, grad_norm), \
             L * sum_grad_norm), \
-        2 * grad_norm + EPSILON))
+        2 * grad_norm**2 + EPSILON))
 
     one_over_eta_plus_min = np.sqrt(np.maximum(one_over_eta_squared + 2 * grad_norm \
             * np.minimum(old_L, grad_norm), \
@@ -107,7 +107,7 @@ def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
     new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
         L * sum_grad_norm)
 
-    increasable_indices = accumulated_regret_max <= 0
+    increasable_indices = accumulated_regret_max <= accumulated_regret_min
     # Careful - we're overwriting accumulated_regret_min here!
     new_accumulated_regret[increasable_indices] = accumulated_regret_max[increasable_indices]
     new_one_over_eta_squared[increasable_indices] = one_over_eta_plus_max[increasable_indices]**2

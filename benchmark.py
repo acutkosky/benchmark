@@ -58,9 +58,9 @@ class Learner(object):
         if self.count == 0:
             return 'Not Started'
         else:
-            return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f' % \
+            return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f, weights norm: %f' % \
             (self.name, str(self.hyperparameters), self.count, self.total_loss/(self.count), \
-                self.total_gradient_norm/self.count)
+                self.total_gradient_norm/self.count, np.linalg.norm(self.parameter))
 
 def name_and_parameters_from_repr(repr_string):
     '''extracts the learner name and hyperparameter
@@ -188,7 +188,6 @@ def multiclass_hinge_loss(weights, feature_vector, label):
         feature_vector: input example to predict class for
         label: target class'''
 
-
     try:
         feature_vector = feature_vector.toarray()[0]
     except:
@@ -217,7 +216,7 @@ def multiclass_hinge_loss(weights, feature_vector, label):
     if hinge_loss != 0:
         gradient[second_best_prediction] = feature_vector
         gradient[label] = -feature_vector
-    return {'loss': true_loss, 'gradient': gradient, 'hinge_loss': hinge_loss}
+    return {'loss': hinge_loss, 'gradient': gradient, 'zero-one_loss': true_loss}
 
 
 def l2_loss(weights, feature_vector, label):
