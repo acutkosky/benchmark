@@ -5,6 +5,8 @@ Benchmark online learning algorithms
 import time
 import sys
 import os
+import pickle
+import re
 
 import numpy as np
 from sklearn.datasets import load_svmlight_file
@@ -25,7 +27,7 @@ class Learner(object):
         return self.__repr__()
 
     def __repr__(self):
-        return '%s;parameters=%s' % (self.name, str(self.hyperparameters))
+        return '%s;parameters=%s' % (self.name, pickle.dumps(self.hyperparameters))
 
     def update(self, loss_info):
         '''updates model parameters given loss_info dict.
@@ -60,6 +62,16 @@ class Learner(object):
             (self.name, str(self.hyperparameters), self.count, self.total_loss/(self.count), \
                 self.total_gradient_norm/self.count)
 
+def name_and_parameters_from_repr(repr_string):
+    '''extracts the learner name and hyperparameter
+    settings from the output of __repr__'''
+    name = repr_string.split(';parameters=')[0]
+    hyperparameters = pickle.loads(repr_string.split(';parameters=')[1])
+    return name, hyperparameters
+
+def dataset_name_from_repr(repr_string):
+    '''extracts dataset name from repr string'''
+    return re.search(r'Dataset\(name=(.*)\)', repr_string).group(0)
 
 class LazyDataset(object):
     '''Behaves like an object of class Dataset, but
@@ -241,6 +253,8 @@ def run_learner(learner, dataset, status_interval=30):
             last_status_time = time.time()
             print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time),
             sys.stdout.flush()
+    print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time),
+    sys.stdout.flush()
     print '\nDone!'
     return {'learner': learner.name, \
             'losses': losses, \

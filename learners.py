@@ -5,7 +5,7 @@ Some learner classes to benchmark
 import numpy as np
 import benchmark as bm
 
-EPSILON = 0.0000000001
+EPSILON = 0.000000000001
 
 class OGD(bm.Learner):
     '''Online (sub)Gradient Descent
