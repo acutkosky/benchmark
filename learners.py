@@ -63,6 +63,7 @@ class AdaGrad(bm.Learner):
 
 
 def freeexp_reg(weights, scaling):
+    '''regularizer used for freeexp'''
     abs_weights = np.abs(weights*scaling)
     return np.sqrt(5)*((abs_weights + 1)*np.log(abs_weights + 1) - abs_weights)
 
@@ -75,7 +76,7 @@ def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
 
     grad_norm = np.abs(gradient)
     L = np.maximum(old_L, grad_norm)
-    sum_grad_norm = np.abs(sum - gradient)
+    sum_grad_norm = np.abs(sum_gradients)
     one_over_eta_plus_max = np.sqrt(np.maximum( \
             np.maximum(one_over_eta_squared - 2 * grad_norm \
                 * np.minimum(old_L, grad_norm), \
