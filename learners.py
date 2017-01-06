@@ -281,3 +281,6 @@ class FreeExpScaledFeatures(FreeExpDiag):
         self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
         self.scaling = self.scaling * np.log(self.scaling + 1)
         self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling)
+
+#set default use of FreeExp to be diag
+FreeExp = FreeExpDiag
