@@ -353,14 +353,12 @@ class KTEstimatorSphere(bm.Learner):
     '''coin-betting based estimator using KT potential'''
     def __init__(self, shape, hyperparameters):
         if hyperparameters is None:
-            hyperparameters = {'L': 1.0, 'eps': 1.0}
-        if 'eps' not in hyperparameters:
-            hyperparameters['eps'] = 1.0
-        hyperparameters = {'L': hyperparameters['L'], 'eps': hyperparameters['eps']}
+            hyperparameters = {'L': 1.0}
+        hyperparameters = {'L': hyperparameters['L']}
         super(KTEstimatorSphere, self).__init__('KTEstimatorSphere', hyperparameters)
 
         self.L = hyperparameters['L']
-        self.eps = hyperparameters['eps']
+        self.eps = 1.0
         self.parameter = np.zeros(shape)
         self.loss_sum = 0
         self.gradients_sum = np.zeros(shape)
@@ -369,7 +367,7 @@ class KTEstimatorSphere(bm.Learner):
 
     @staticmethod
     def hyperparameter_names():
-        return ['L', 'eps']
+        return ['L']
 
     def update(self, loss_info):
         '''update parameters'''
@@ -384,14 +382,12 @@ class KTEstimatorDiag(bm.Learner):
     '''diagonal coin-betting based estimator using KT potential'''
     def __init__(self, shape, hyperparameters):
         if hyperparameters is None:
-            hyperparameters = {'L': 1.0, 'eps': 1.0}
-        if 'eps' not in hyperparameters:
-            hyperparameters['eps'] = 1.0
-        hyperparameters = {'L': hyperparameters['L'], 'eps': hyperparameters['eps']}
+            hyperparameters = {'L': 1.0}
+        hyperparameters = {'L': hyperparameters['L']}
         super(KTEstimatorDiag, self).__init__('KTEstimatorDiag', hyperparameters)
 
         self.L = hyperparameters['L']
-        self.eps = hyperparameters['eps']
+        self.eps = 1.0
         self.parameter = np.zeros(shape)
         self.loss_sum = np.zeros(shape)
         self.gradients_sum = np.zeros(shape)
@@ -400,7 +396,7 @@ class KTEstimatorDiag(bm.Learner):
 
     @staticmethod
     def hyperparameter_names():
-        return ['L', 'eps']
+        return ['L']
 
     def update(self, loss_info):
         '''update parameters'''
