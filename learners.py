@@ -127,7 +127,7 @@ class FreeExp(bm.Learner):
 
         self.parameter = np.zeros(shape)
 
-        scaling = np.reshape(np.arange(1, len(self.parameter.flatten())), shape)
+        scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
         self.psi = lambda weights: freeexp_reg(weights, scaling)
 
     def update(self, loss_info):
