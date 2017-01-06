@@ -114,7 +114,7 @@ def update_learning_rate(accumulated_regret, old_L, one_over_eta_squared, \
 
 class FreeExp(bm.Learner):
     '''FreeExp Learner'''
-    def __init__(self, shape):
+    def __init__(self, shape, hyperparameters=None):
         hyperparameters = None
         super(FreeExp, self).__init__('FreeExp', hyperparameters)
 
