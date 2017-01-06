@@ -6,6 +6,7 @@ import time
 import sys
 import os
 import pickle
+import json
 import re
 
 import numpy as np
@@ -22,12 +23,13 @@ class Learner(object):
         self.count = 0
         self.total_loss = 0
         self.total_gradient_norm = 0
+        self.repr_dict = {'name': name, 'hyperparameters': hyperparameters}
 
     def __str__(self):
         return self.__repr__()
 
     def __repr__(self):
-        return '%s;parameters=%s' % (self.name, pickle.dumps(self.hyperparameters))
+        return json.dumps(self.repr_dict)
 
     def update(self, loss_info):
         '''updates model parameters given loss_info dict.
@@ -65,9 +67,7 @@ class Learner(object):
 def name_and_parameters_from_repr(repr_string):
     '''extracts the learner name and hyperparameter
     settings from the output of __repr__'''
-    name = repr_string.split(';parameters=')[0]
-    hyperparameters = pickle.loads(repr_string.split(';parameters=')[1])
-    return name, hyperparameters
+    return json.loads(repr_string)
 
 def dataset_name_from_repr(repr_string):
     '''extracts dataset name from repr string'''
@@ -83,10 +83,10 @@ class LazyDataset(object):
         self.dataset = None
 
     def __str__(self):
-        return self.name
+        return self.__repr__()
 
     def __repr__(self):
-        return 'Dataset(name=%s)' % (self.name)
+        return 'Dataset(name='+self.name+')'
 
     def __getattr__(self, name):
         if name == 'name':
@@ -145,10 +145,10 @@ class Dataset(object):
         self.current_index = 0
 
     def __str__(self):
-        return self.name
+        return self.__repr__()
 
     def __repr__(self):
-        return 'Dataset(name=%s)' % (self.name)
+        return 'Dataset(name='+self.name+')'
 
     def get_example(self):
         '''gets the next example in the dataset, looping to beginning if needed'''
@@ -256,9 +256,36 @@ def run_learner(learner, dataset, status_interval=30):
     sys.stdout.flush()
     print '\nDone!'
     return {'learner': learner.name, \
+            'dataset': dataset.name, \
             'losses': losses, \
             'total_loss': total_loss, \
+            'iterations:': len(losses), \
             'hyperparameters': learner.hyperparameters}
+
+def extract_values_from_log(filter_func = lambda x: True):
+    '''find average losses from of all calls to run_learner whose
+    output passes the boolean check implemented by filter_func'''
+    def get_average_loss(results):
+        return {'learner': results['learner'], \
+                'dataset': results['dataset'], \
+                'hyperparameters': results['hyperparameters'], \
+                'average_loss': float(results['total_loss'])/results['iterations']}
+
+    return cachelog.process_logged_function_calls(run_learner, get_average_loss, filter_func)
+
+def extract_all_for_dataset(dataset_name):
+    '''find average losses from all calls to run_learner on a given dataset.'''
+    def filter_func(results):
+        return results['dataset'] == dataset_name
+
+    return extract_values_from_log(filter_func)
+
+def extract_all_for_learner(learner_name):
+    '''find average losses from all calls to run_learner on a given learner.'''
+    def filter_func(results):
+        return results['learner'] == learner_name
+    return extract_values_from_log(filter_func)
+
 
 
 def search_hyperparameters(learner_factory, dataset, search_list):
