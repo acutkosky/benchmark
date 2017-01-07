@@ -4,7 +4,6 @@ analyze stored data
 
 import pandas as pd
 
-import cachelog
 import benchmark as bm
 
 def min_or_first(value1, value2):
@@ -44,4 +43,4 @@ def plot_dataset(dataset_name, learners_to_hyperparameters):
     plots average loss of each learner on a given dataset.
     '''
     df = get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters)
-    df.plot().set_ylabel('average loss')
+    df.plot(logx=True, logy=True).set_ylabel('average loss')
