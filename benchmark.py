@@ -231,8 +231,6 @@ def l2_loss(weights, feature_vector, label):
     gradient = (prediction-label)*feature_vector
     return {'loss': loss, 'gradient': gradient}
 
-
-
 def run_learner(learner, dataset, status_interval=30):
     '''run a learner on a dataset, printing status
     every status_interval seconds'''
@@ -242,7 +240,7 @@ def run_learner(learner, dataset, status_interval=30):
     losses = []
     total_loss = 0.0
     with warnings.catch_warnings():
-        warnings.simplefilter("always")
+        warnings.simplefilter("error")
         try:
             for predict_info, get_loss_info in dataset.get_infos():
                 loss_info = get_loss_info(learner.predict(predict_info))
