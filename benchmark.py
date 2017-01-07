@@ -5,9 +5,9 @@ Benchmark online learning algorithms
 import time
 import sys
 import os
-import pickle
 import json
 import re
+import warnings
 
 import numpy as np
 from sklearn.datasets import load_svmlight_file
@@ -240,20 +240,28 @@ def run_learner(learner, dataset, status_interval=30):
     start_time = time.time()
     last_status_time = 0
     losses = []
-    total_loss = 0
-    for predict_info, get_loss_info in dataset.get_infos():
-        loss_info = get_loss_info(learner.predict(predict_info))
-        losses.append(loss_info['loss'])
-        total_loss += loss_info['loss']
+    total_loss = 0.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        try:
+            for predict_info, get_loss_info in dataset.get_infos():
+                loss_info = get_loss_info(learner.predict(predict_info))
+                losses.append(loss_info['loss'])
+                total_loss += loss_info['loss']
+                learner.update(loss_info)
 
-        learner.update(loss_info)
+                if time.time() > last_status_time + status_interval:
+                    last_status_time = time.time()
+                    print "%s, time elapsed: %d\r" % (learner.get_status(), \
+                        last_status_time-start_time),
+                    sys.stdout.flush()
 
-        if time.time() > last_status_time + status_interval:
-            last_status_time = time.time()
-            print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time),
+            print "%s, time elapsed: %d\r" % (learner.get_status(), time.time()-start_time),
             sys.stdout.flush()
-    print "%s, time elapsed: %d\r" % (learner.get_status(), last_status_time-start_time),
-    sys.stdout.flush()
+
+        except RuntimeWarning:
+            print "\nFound RuntimeWarning - probably there was an overflow somewhere. Aborting!"
+            total_loss = float('nan')
     print '\nDone!'
     return {'learner': learner.name, \
             'dataset': dataset.name, \
@@ -262,7 +270,7 @@ def run_learner(learner, dataset, status_interval=30):
             'iterations': len(losses), \
             'hyperparameters': learner.hyperparameters}
 
-def extract_values_from_log(filter_func = lambda x: True):
+def extract_values_from_log(filter_func=lambda x: True):
     '''find average losses from of all calls to run_learner whose
     output passes the boolean check implemented by filter_func'''
     def get_average_loss(results):
@@ -334,7 +342,8 @@ def run_all_datasets(directory, problem_type, learner_factories):
         pass
 
     for filename in filenames:
-        dataset = load_libsvm_dataset(os.path.join(directory, filename), problem_type=problem_type, permute=False)
+        dataset = load_libsvm_dataset(os.path.join(directory, filename), \
+            problem_type=problem_type, permute=False)
         for learner_factory in learner_factories:
             search_list = generate_default_search_list(learner_factory)
             search_hyperparameters(learner_factory, dataset, search_list)
