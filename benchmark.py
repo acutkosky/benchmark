@@ -259,7 +259,7 @@ def run_learner(learner, dataset, status_interval=30):
             'dataset': dataset.name, \
             'losses': losses, \
             'total_loss': total_loss, \
-            'iterations:': len(losses), \
+            'iterations': len(losses), \
             'hyperparameters': learner.hyperparameters}
 
 def extract_values_from_log(filter_func = lambda x: True):
@@ -269,7 +269,7 @@ def extract_values_from_log(filter_func = lambda x: True):
         return {'learner': results['learner'], \
                 'dataset': results['dataset'], \
                 'hyperparameters': results['hyperparameters'], \
-                'average_loss': float(results['total_loss'])/results['iterations']}
+                'average_loss': float(results['total_loss'])/len(results['losses'])}
 
     return cachelog.process_logged_function_calls(run_learner, get_average_loss, filter_func)
 
