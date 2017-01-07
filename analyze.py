@@ -29,7 +29,11 @@ def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters):
             if learner not in group_by_learners:
                 hyperparameter_name = learners_to_hyperparameters[learner]
                 group_by_learners[learner] = {}
-            hyperparameter_setting = experiment['hyperparameters'][hyperparameter_name]
+            hyperparameters = experiment['hyperparameters']
+            if hyperparameters is not None:
+                hyperparameter_setting = experiment['hyperparameters'][hyperparameter_name]
+            else:
+                hyperparameter_setting = 1.0
             average_loss = experiment['average_loss']
             group_by_learners[learner][hyperparameter_setting] = \
                 min_or_first(average_loss, group_by_learners[learner].get(hyperparameter_setting))
@@ -43,4 +47,4 @@ def plot_dataset(dataset_name, learners_to_hyperparameters):
     plots average loss of each learner on a given dataset.
     '''
     df = get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters)
-    df.plot(logx=True, logy=True).set_ylabel('average loss')
+    df.plot(title=dataset_name, logx=True, logy=True).set_ylabel('average loss')
