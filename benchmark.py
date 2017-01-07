@@ -257,7 +257,7 @@ def run_learner(learner, dataset, status_interval=30):
             sys.stdout.flush()
 
         except RuntimeWarning:
-            print "\nFound RuntimeWarning - probably there was an overflow somewhere. Aborting!",
+            print "\nFound RuntimeWarning - probably there was an overflow somewhere. Aborting!\r",
             total_loss = float('nan')
     print '\nDone!'
     return {'learner': learner.name, \
