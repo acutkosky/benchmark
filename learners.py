@@ -309,7 +309,7 @@ class PiSTOLSphere(bm.Learner):
         self.gradients_sum += gradient
         grad_norm = np.linalg.norm(gradient)
         self.gradients_norm_sum += grad_norm
-        alpha = self.a * self.gradients_norm_sum
+        alpha = self.a * self.gradients_norm_sum + EPSILON
         self.parameter = - self.gradients_sum * self.b / alpha \
             * np.exp(self.gradients_norm_sum**2/ (2 * alpha))
 
@@ -339,7 +339,7 @@ class PiSTOLDiag(bm.Learner):
         self.gradients_sum += gradient
         grad_norm = np.abs(gradient)
         self.gradients_norm_sum += grad_norm
-        alpha = self.a * self.gradients_norm_sum
+        alpha = self.a * self.gradients_norm_sum + EPSILON
         self.parameter = - self.gradients_sum * self.b / alpha \
             * np.exp(self.gradients_norm_sum**2/ (2 * alpha))
 
