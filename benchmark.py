@@ -57,10 +57,7 @@ class Learner(object):
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
-        if self.count == 0:
-            return 'Not Started'
-        else:
-            return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f, weights norm: %f' % \
+        return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f, weights norm: %f' % \
             (self.name, str(self.hyperparameters), self.count, self.total_loss/(self.count), \
                 self.total_gradient_norm/self.count, np.linalg.norm(self.parameter))
 
