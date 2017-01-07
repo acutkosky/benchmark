@@ -341,7 +341,7 @@ class PiSTOLDiag(bm.Learner):
         self.gradients_norm_sum += grad_norm
         alpha = self.a * self.gradients_norm_sum
         self.parameter = - self.gradients_sum * self.b / alpha \
-            * np.exp(self.gradients_sum_norm**2/ (2 * alpha))
+            * np.exp(self.gradients_norm_sum**2/ (2 * alpha))
 
 class PiSTOLScale(PiSTOLDiag):
     '''PiSTOL diagonal learner with features scaled by dimension'''
