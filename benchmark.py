@@ -57,9 +57,16 @@ class Learner(object):
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
-        return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %f, Av. gradient norm: %f, weights norm: %f' % \
-            (self.name, str(self.hyperparameters), self.count, self.total_loss/(self.count), \
-                self.total_gradient_norm/self.count, np.linalg.norm(self.parameter))
+        if self.count == 0:
+            av_loss = 'Not Started'
+            av_grad_norm = 'Not Started'
+        else:
+            av_loss = '%f' % (self.total_loss/(self.count))
+            av_grad_norm = '%f' % (self.total_gradient_norm/self.count)
+
+        return '%s: Hyperparameters: %s, Updates: %d, Av. loss: %s, Av. gradient norm: %s, weights norm: %f' % \
+            (self.name, str(self.hyperparameters), self.count, av_loss, \
+                av_grad_norm, np.linalg.norm(self.parameter))
 
 def name_and_parameters_from_repr(repr_string):
     '''extracts the learner name and hyperparameter
