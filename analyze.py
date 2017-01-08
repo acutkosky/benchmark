@@ -35,9 +35,9 @@ def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters, upper_l
             else:
                 hyperparameter_setting = 1.0
             average_loss = experiment['average_loss']
-            if hyperparameter_setting <= upper_limit and hyperparameter_setting >= lower_limit:
-                group_by_learners[learner][hyperparameter_setting] = \
-                    min_or_first(average_loss, group_by_learners[learner].get(hyperparameter_setting))
+            if average_loss <= upper_limit and average_loss >= lower_limit:
+            group_by_learners[learner][hyperparameter_setting] = \
+                min_or_first(average_loss, group_by_learners[learner].get(hyperparameter_setting))
     df = pd.DataFrame({learner: pd.Series(group_by_learners[learner]) \
         for learner in group_by_learners})
     df.index.name = 'hyperparameter setting'
