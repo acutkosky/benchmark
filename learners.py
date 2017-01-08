@@ -7,6 +7,8 @@ import benchmark as bm
 
 EPSILON = 0.000000000001
 
+FREEEXP_K = 1.0
+
 class OGD(bm.Learner):
     '''Online (sub)Gradient Descent
     hyperparmeter eta is the learning rate'''
@@ -65,12 +67,12 @@ class AdaGrad(bm.Learner):
 def freeexp_diag_reg(w, scaling):
     '''regularizer used for diagonal freeexp'''
     abs_w = np.abs(w*scaling)
-    return np.sqrt(5)*((abs_w + 1)*np.log(abs_w + 1) - abs_w)
+    return np.sqrt(FREEEXP_K)*((abs_w + 1)*np.log(abs_w + 1) - abs_w)
 
 def freeexp_sphere_reg(w):
     ''''regularizer used for l2 freeexp'''
     norm_w = np.linalg.norm(w)
-    return np.sqrt(5)*((norm_w + 1)*np.log(norm_w + 1) - norm_w)
+    return np.sqrt(FREEEXP_K)*((norm_w + 1)*np.log(norm_w + 1) - norm_w)
 
 def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared, \
     weights, gradient, gradients_sum, psi):
@@ -97,9 +99,9 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(np.sqrt(FREEEXP_K) * one_over_eta_plus_max)) - 1)
     new_weights_plus_min = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(np.sqrt(FREEEXP_K) * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -143,9 +145,9 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(np.sqrt(FREEEXP_K) * one_over_eta_plus_max)) - 1)
     new_weights_plus_min = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(np.sqrt(5) * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(np.sqrt(FREEEXP_K) * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -207,7 +209,7 @@ class FreeExpSphere(bm.Learner):
         self.one_over_eta_squared = new_one_over_eta_squared
 
         self.parameter = - self.gradients_sum/(gradients_sum_norm + EPSILON) \
-            * (np.exp(gradients_sum_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
+            * (np.exp(gradients_sum_norm/np.sqrt(FREEEXP_K * self.one_over_eta_squared)) - 1)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
@@ -260,7 +262,7 @@ class FreeExpDiag(bm.Learner):
         self.one_over_eta_squared = new_one_over_eta_squared
 
         self.parameter = -np.sign(self.gradients_sum)/self.scaling \
-            * (np.exp(gradients_sum_norm/np.sqrt(5 * self.one_over_eta_squared)) - 1)
+            * (np.exp(gradients_sum_norm/np.sqrt(FREEEXP_K * self.one_over_eta_squared)) - 1)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
