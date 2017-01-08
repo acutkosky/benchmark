@@ -14,7 +14,7 @@ def min_or_first(value1, value2):
     else:
         return min(value1, value2)
 
-def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters):
+def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters, upper_limit=1e5, lower_limit=1e-5):
     '''
     gets a dataframe containing the average loss of each learner on a given dataset as a function
     of hyperparameter setting. The hyperparameter used is given as the value keyed
@@ -27,16 +27,17 @@ def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters):
         learner = experiment['learner']
         if learner in learners_to_hyperparameters:
             if learner not in group_by_learners:
-                hyperparameter_name = learners_to_hyperparameters[learner]
                 group_by_learners[learner] = {}
+            hyperparameter_name = learners_to_hyperparameters[learner]
             hyperparameters = experiment['hyperparameters']
             if hyperparameters is not None:
-                hyperparameter_setting = experiment['hyperparameters'][hyperparameter_name]
+                hyperparameter_setting = hyperparameters[hyperparameter_name]
             else:
                 hyperparameter_setting = 1.0
             average_loss = experiment['average_loss']
-            group_by_learners[learner][hyperparameter_setting] = \
-                min_or_first(average_loss, group_by_learners[learner].get(hyperparameter_setting))
+            if hyperparameter_setting < upper_limit and hyperparameter_setting < lower_limit:
+                group_by_learners[learner][hyperparameter_setting] = \
+                    min_or_first(average_loss, group_by_learners[learner].get(hyperparameter_setting))
     df = pd.DataFrame({learner: pd.Series(group_by_learners[learner]) \
         for learner in group_by_learners})
     df.index.name = 'hyperparameter setting'
