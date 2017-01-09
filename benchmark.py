@@ -238,7 +238,6 @@ def l2_loss(weights, feature_vector, label):
 def run_learner(learner, dataset, status_interval=30):
     '''run a learner on a dataset, printing status
     every status_interval seconds'''
-    print 'Uncached result - running experiment'
     start_time = time.time()
     last_status_time = 0
     losses = []
@@ -284,6 +283,13 @@ def extract_all_for_dataset(dataset_name):
             item['average_loss'] = item['total_loss']/item['iterations']
     return results
 
+def lookup_experiment(dataset_name, learner_name, hyperparameters):
+    experiments = database.recover_experiment(where={'dataset': dataset_name, 'learner': learner_name}, \
+        select=['learner', 'dataset', 'hyperparameters', 'total_loss', 'iterations'])
+    for experiment in experiments:
+        if experiment[hyperparameters] == hyperparameters:
+            return experiment
+    return None
 
 def search_hyperparameters(learner_factory, dataset, search_list):
     '''
@@ -292,7 +298,14 @@ def search_hyperparameters(learner_factory, dataset, search_list):
     into learner.
     '''
     for hyperparameters in search_list:
-        run_learner(learner_factory(dataset.shape, hyperparameters), dataset)
+        learner = learner_factory(dataset.shape, hyperparameters)
+        found_experiment = lookup_experiment(dataset.name, learner.name, hyperparameters) 
+        if found_experiment is None:
+            print 'Uncached result - running experiment'
+            run_learner(learner, dataset)
+        else:
+            print 'Cached result:'
+            print found_experiment
 
 def generate_default_search_list(learner_factory):
     '''
