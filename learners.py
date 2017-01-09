@@ -260,7 +260,7 @@ class FreeExpDiag(bm.Learner):
         self.accumulated_regret, new_one_over_eta_squared = \
             update_learning_rate_diag(self.accumulated_regret, \
                 self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.gradients_sum, self.scaling, self.psi, self.k)
+                self.parameter, gradient, self.gradients_sum, self.scaling, self.k, self.psi)
 
         self.L = np.maximum(self.L, np.abs(gradient))
 
