@@ -331,6 +331,8 @@ def run_all_datasets(directory, problem_type, learner_factories):
     given a directoy of libsvm datasets and some learners, runs hyperparameter searches
     on all the learners on all the datasets in the directory.
     '''
+    database.initialize()
+
     filenames = [item for item in os.listdir(directory) \
         if os.path.isfile(os.path.join(directory, item))]
 
