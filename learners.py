@@ -97,9 +97,9 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1.0)
     new_weights_plus_min = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1.0)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -143,9 +143,9 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1.0)
     new_weights_plus_min = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1.0)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -211,7 +211,7 @@ class FreeExpSphere(bm.Learner):
         self.one_over_eta_squared = new_one_over_eta_squared
 
         self.parameter = - self.gradients_sum/(gradients_sum_norm + EPSILON) \
-            * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1)
+            * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
@@ -271,7 +271,7 @@ class FreeExpDiag(bm.Learner):
         self.one_over_eta_squared = new_one_over_eta_squared
 
         self.parameter = -np.sign(self.gradients_sum)/self.scaling \
-            * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1)
+            * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
