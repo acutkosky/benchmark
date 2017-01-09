@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 from sklearn.datasets import load_svmlight_file
 
-import cachelog
+import database
 
 class Learner(object):
     '''Base class for building online learners'''
@@ -152,7 +152,7 @@ class Dataset(object):
         return self.__repr__()
 
     def __repr__(self):
-        return 'Dataset(name='+self.name+')'
+        return json.dumps({'dataset_name': self.name})
 
     def get_example(self):
         '''gets the next example in the dataset, looping to beginning if needed'''
@@ -264,37 +264,25 @@ def run_learner(learner, dataset, status_interval=30):
             print "\nFound RuntimeWarning - probably there was an overflow somewhere. Aborting!\r",
             total_loss = float('nan')
     print '\nDone!'
-    return {'learner': learner.name, \
-            'dataset': dataset.name, \
-            'losses': losses, \
-            'total_loss': total_loss, \
-            'iterations': len(losses), \
-            'hyperparameters': learner.hyperparameters}
-
-def extract_values_from_log(filter_func=lambda x: True):
-    '''find average losses from of all calls to run_learner whose
-    output passes the boolean check implemented by filter_func'''
-    def get_average_loss(results):
-        return {'learner': results['learner'], \
-                'dataset': results['dataset'], \
-                'hyperparameters': results['hyperparameters'], \
-                'average_loss': float(results['total_loss'])/len(results['losses'])}
-
-    return cachelog.process_logged_function_calls(run_learner, get_average_loss, filter_func)
+    exp_data = {'learner': learner.name, \
+                'dataset': dataset.name, \
+                'losses': losses, \
+                'total_loss': total_loss, \
+                'iterations': len(losses), \
+                'hyperparameters': learner.hyperparameters}
+    database.add_experiment(exp_data)
+    return exp_data
 
 def extract_all_for_dataset(dataset_name):
     '''find average losses from all calls to run_learner on a given dataset.'''
-    def filter_func(results):
-        return results['dataset'] == dataset_name
-
-    return extract_values_from_log(filter_func)
-
-def extract_all_for_learner(learner_name):
-    '''find average losses from all calls to run_learner on a given learner.'''
-    def filter_func(results):
-        return results['learner'] == learner_name
-    return extract_values_from_log(filter_func)
-
+    results = database.recover_experiment(where={'dataset': dataset_name}, \
+        select=['learner', 'dataset', 'hyperparameters', 'total_loss', 'iterations'])
+    for item in results:
+        if item['iterations'] == 0:
+            item['average_loss'] = float('nan')
+        else:
+            item['average_loss'] = item['total_loss']/item['iterations']
+    return results
 
 
 def search_hyperparameters(learner_factory, dataset, search_list):
@@ -303,11 +291,8 @@ def search_hyperparameters(learner_factory, dataset, search_list):
     search_dict is an iterable collection of hyperparameter dicts to input
     into learner.
     '''
-
-    cachified_run_learner = cachelog.cachify(run_learner)
-
     for hyperparameters in search_list:
-        cachified_run_learner(learner_factory(dataset.shape, hyperparameters), dataset)
+        run_learner(learner_factory(dataset.shape, hyperparameters), dataset)
 
 def generate_default_search_list(learner_factory):
     '''
