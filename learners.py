@@ -239,7 +239,7 @@ class FreeExpDiag(bm.Learner):
         self.one_over_eta_squared = np.zeros(shape) + EPSILON
         self.one_over_eta_squared_without_increases = np.zeros(shape)
 
-        self.k - hyperparameters['k']
+        self.k = hyperparameters['k']
         self.L = np.zeros(shape)
         self.gradients_sum = np.zeros(shape)
         self.accumulated_regret = np.zeros(shape)
