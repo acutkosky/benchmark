@@ -287,7 +287,7 @@ def lookup_experiment(dataset_name, learner_name, hyperparameters):
     experiments = database.recover_experiment(where={'dataset': dataset_name, 'learner': learner_name}, \
         select=['learner', 'dataset', 'hyperparameters', 'total_loss', 'iterations'])
     for experiment in experiments:
-        if experiment[hyperparameters] == hyperparameters:
+        if experiment['hyperparameters'] == hyperparameters:
             return experiment
     return None
 
