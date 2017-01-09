@@ -7,8 +7,6 @@ import benchmark as bm
 
 EPSILON = 0.000000000001
 
-FREEEXP_K = 1.0
-
 class OGD(bm.Learner):
     '''Online (sub)Gradient Descent
     hyperparmeter eta is the learning rate'''
@@ -67,12 +65,12 @@ class AdaGrad(bm.Learner):
 def freeexp_diag_reg(w, scaling, k):
     '''regularizer used for diagonal freeexp'''
     abs_w = np.abs(w*scaling)
-    return k * np.sqrt(FREEEXP_K)*((abs_w + 1)*np.log(abs_w + 1) - abs_w)
+    return k * ((abs_w + 1)*np.log(abs_w + 1) - abs_w)
 
 def freeexp_sphere_reg(w, k):
     ''''regularizer used for l2 freeexp'''
     norm_w = np.linalg.norm(w)
-    return k * np.sqrt(FREEEXP_K)*((norm_w + 1)*np.log(norm_w + 1) - norm_w)
+    return k * ((norm_w + 1)*np.log(norm_w + 1) - norm_w)
 
 def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared, \
     weights, gradient, gradients_sum, k, psi):
@@ -99,9 +97,9 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * np.sqrt(FREEEXP_K) * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1)
     new_weights_plus_min = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * np.sqrt(FREEEXP_K) * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
@@ -145,9 +143,9 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
         old_L * gradients_sum_norm))
 
     new_weights_plus_max = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * np.sqrt(FREEEXP_K) * one_over_eta_plus_max)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1)
     new_weights_plus_min = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * np.sqrt(FREEEXP_K) * one_over_eta_plus_min)) - 1)
+        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1)
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
