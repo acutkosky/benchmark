@@ -299,7 +299,7 @@ class FreeExpScaledFeatures(FreeExpDiag):
         if hyperparameters is None:
             hyperparameters = {'k': 1.0}
         hyperparameters = {'k': hyperparameters['k']}
-        super(FreeExpScaledFeatures, self).__init__('FreeExpScaledFeatures', hyperparameters)
+        super(FreeExpScaledFeatures, self).__init__('FreeExpScaledFeatures', shape, hyperparameters)
 
         self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
         self.scaling = self.scaling * np.log(self.scaling + 1)
