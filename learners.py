@@ -401,7 +401,7 @@ class KTEstimatorSphere(bm.Learner):
     def update(self, loss_info):
         '''update parameters'''
         super(KTEstimatorSphere, self).update(loss_info)
-        gradient = loss_info['gradient']
+        gradient = loss_info['gradient']/self.L
         self.gradients_sum += gradient
         self.loss_sum += np.sum((gradient * self.parameter).flatten())
         self.t += 1
@@ -430,7 +430,7 @@ class KTEstimatorDiag(bm.Learner):
     def update(self, loss_info):
         '''update parameters'''
         super(KTEstimatorDiag, self).update(loss_info)
-        gradient = loss_info['gradient']
+        gradient = loss_info['gradient']/self.L
         self.gradients_sum += gradient
         self.loss_sum += gradient * self.parameter
         self.t += 1
