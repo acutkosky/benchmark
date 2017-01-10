@@ -48,4 +48,4 @@ def plot_dataset(dataset_name, learners_to_hyperparameters):
     plots average loss of each learner on a given dataset.
     '''
     df = get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters)
-    df.plot(title=dataset_name, logx=True, logy=True).set_ylabel('average loss')
+    df.interpolate(method='value').plot(title=dataset_name, logx=True, logy=True).set_ylabel('average loss')
