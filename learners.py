@@ -210,6 +210,9 @@ class FreeExpSphere(bm.Learner):
 
         self.one_over_eta_squared = new_one_over_eta_squared
 
+        self.extra_data = {'one_over_eta_squared': self.one_over_eta_squared, \
+        'one_over_eta_squared_without_increases': self.one_over_eta_squared_without_increases}
+
         self.parameter = - self.gradients_sum/(gradients_sum_norm + EPSILON) \
             * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
@@ -269,6 +272,9 @@ class FreeExpDiag(bm.Learner):
             + 2*grad_norm**2, self.L * np.abs(gradients_sum_norm))
 
         self.one_over_eta_squared = new_one_over_eta_squared
+
+        self.extra_data = {'one_over_eta_squared': np.average(self.one_over_eta_squared), \
+        'one_over_eta_squared_without_increases': np.average(self.one_over_eta_squared_without_increases)}
 
         self.parameter = -np.sign(self.gradients_sum)/self.scaling \
             * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)

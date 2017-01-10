@@ -24,6 +24,7 @@ class Learner(object):
         self.total_loss = 0
         self.total_gradient_norm = 0
         self.repr_dict = {'name': name, 'hyperparameters': hyperparameters}
+        self.extra_data = {}
 
     def __str__(self):
         return self.__repr__()
@@ -268,7 +269,8 @@ def run_learner(learner, dataset, status_interval=30):
                 'losses': losses, \
                 'total_loss': total_loss, \
                 'iterations': len(losses), \
-                'hyperparameters': learner.hyperparameters}
+                'hyperparameters': learner.hyperparameters, \
+                'extra_data': learner.extra_data}
     database.add_experiment(exp_data)
     return exp_data
 
