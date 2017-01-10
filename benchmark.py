@@ -280,7 +280,7 @@ def extract_all_for_dataset(dataset_name):
     results = database.recover_experiment(where={'dataset': dataset_name}, \
         select=['learner', 'dataset', 'hyperparameters', 'total_loss', 'iterations'])
     for item in results:
-        if item['iterations'] == 0:
+        if item['iterations'] == 0 or item['total_loss'] == None:
             item['average_loss'] = float('nan')
         else:
             item['average_loss'] = item['total_loss']/item['iterations']
