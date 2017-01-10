@@ -114,7 +114,7 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
     new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
         L * gradients_sum_norm)
 
-    if accumulated_regret_max <= accumulated_regret_min:
+    if (accumulated_regret_max <= accumulated_regret_min).any():
         new_accumulated_regret = accumulated_regret_max
         new_one_over_eta_squared = one_over_eta_plus_max**2
 
