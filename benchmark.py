@@ -318,7 +318,7 @@ def generate_default_search_list(learner_factory):
     logarithmically spaced grid.
     '''
     keys = learner_factory.hyperparameter_names()
-    default_settings = np.power(10, np.arange(-5, 4.5, 0.5))
+    default_settings = np.power(10, np.arange(-3, 5.5, 0.5))
     current_indices = {key: 0 for key in keys}
     total_count = len(default_settings)**len(keys)
     count = 1

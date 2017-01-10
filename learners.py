@@ -55,7 +55,7 @@ class AdaGrad(bm.Learner):
 
         self.sum_gradient_squared += gradient**2
 
-        self.parameter -= self.D * gradient / np.sqrt(self.sum_gradient_squared)
+        self.parameter -= gradient / (self.D * np.sqrt(self.sum_gradient_squared))
 
     @staticmethod
     def hyperparameter_names():
@@ -65,7 +65,7 @@ class AdaGrad(bm.Learner):
 def freeexp_diag_reg(w, scaling, k):
     '''regularizer used for diagonal freeexp'''
     abs_w = np.abs(w*scaling)
-    return k * ((abs_w + 1)*np.log(abs_w + 1) - abs_w)
+    return k/scaling * ((abs_w + 1)*np.log(abs_w + 1) - abs_w)
 
 def freeexp_sphere_reg(w, k):
     ''''regularizer used for l2 freeexp'''
@@ -304,7 +304,7 @@ class FreeExpScaledFeatures(FreeExpDiag):
         self.name = 'FreeExpScaledFeatures'
 
         self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
-        self.scaling = self.scaling * np.log(self.scaling + 1)
+        self.scaling = self.scaling * np.log(self.scaling + 1)**2
         self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling, self.k)
 
     @staticmethod
