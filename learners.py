@@ -372,7 +372,7 @@ class PiSTOLDiag(bm.Learner):
         self.parameter = - self.gradients_sum * self.b / alpha \
             * np.exp(np.abs(self.gradients_sum)**2/ (2 * alpha))
 
-class PiSTOLScale(PiSTOLDiag):
+class PiSTOLScaledFeatures(PiSTOLDiag):
     '''PiSTOL diagonal learner with features scaled by dimension'''
     def __init__(self, shape, hyperparameters=None):
         super(PiSTOLScale, self).__init__('PiSTOLDiag', shape, hyperparameters)
