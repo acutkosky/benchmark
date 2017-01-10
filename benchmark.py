@@ -274,6 +274,9 @@ def run_learner(learner, dataset, status_interval=30):
 
 def extract_all_for_dataset(dataset_name):
     '''find average losses from all calls to run_learner on a given dataset.'''
+
+    database.initialize()
+
     results = database.recover_experiment(where={'dataset': dataset_name}, \
         select=['learner', 'dataset', 'hyperparameters', 'total_loss', 'iterations'])
     for item in results:
