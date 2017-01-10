@@ -9,7 +9,7 @@ EPSILON = 0.000000000001
 
 class OGD(bm.Learner):
     '''Online (sub)Gradient Descent
-    hyperparmeter eta is the learning rate'''
+    hyperparmeter one_on_eta is the learning rate'''
 
     def __init__(self, shape, hyperparameters=None):
         if hyperparameters is None:
@@ -174,7 +174,7 @@ class FreeExpSphere(bm.Learner):
             hyperparameters = {'k': 1.0}
         hyperparameters = {'k': hyperparameters['k']}
 
-        super(FreeExpSphere, self).__init__('FreeExpSphere')
+        super(FreeExpSphere, self).__init__('FreeExpSphere',hyperparameters)
 
         self.one_over_eta_squared = EPSILON
         self.one_over_eta_squared_without_increases = 0
