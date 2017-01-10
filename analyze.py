@@ -41,11 +41,11 @@ def get_dataframe_for_dataset(dataset_name, learners_to_hyperparameter_getters):
     df = pd.DataFrame({learner: pd.Series(group_by_learners[learner]) \
         for learner in group_by_learners})
     df.index.name = 'hyperparameter setting'
-    return df
+    return df.interpolate(method='values')
 
 def plot_dataset(dataset_name, learners_to_hyperparameters):
     '''
     plots average loss of each learner on a given dataset.
     '''
     df = get_dataframe_for_dataset(dataset_name, learners_to_hyperparameters)
-    df.interpolate(method='value').plot(title=dataset_name, logx=True, logy=True).set_ylabel('average loss')
+    df.plot(title=dataset_name, logx=True, logy=True).set_ylabel('average loss')
