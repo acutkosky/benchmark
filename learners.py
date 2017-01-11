@@ -375,7 +375,8 @@ class PiSTOLDiag(bm.Learner):
 class PiSTOLScaledFeatures(PiSTOLDiag):
     '''PiSTOL diagonal learner with features scaled by dimension'''
     def __init__(self, shape, hyperparameters=None):
-        super(PiSTOLScale, self).__init__('PiSTOLDiag', shape, hyperparameters)
+        super(PiSTOLScaledFeatures, self).__init__(shape, hyperparameters)
+        self.name = 'PiSTOLScaledFeatures'
         self.b = 1.0/len(self.parameter.flatten())
 
 class KTEstimatorSphere(bm.Learner):
