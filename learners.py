@@ -304,7 +304,7 @@ class FreeExpScaledFeatures(FreeExpDiag):
         self.name = 'FreeExpScaledFeatures'
 
         self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
-        self.scaling = self.scaling * np.log(self.scaling + 1)**2
+        self.scaling = 4*self.scaling * np.log(self.scaling + 1)**2
         self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling, self.k)
 
     @staticmethod
@@ -378,6 +378,11 @@ class PiSTOLScaledFeatures(PiSTOLDiag):
         super(PiSTOLScaledFeatures, self).__init__(shape, hyperparameters)
         self.name = 'PiSTOLScaledFeatures'
         self.b = 1.0/len(self.parameter.flatten())
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L']
+
 
 class KTEstimatorSphere(bm.Learner):
     '''coin-betting based estimator using KT potential'''
