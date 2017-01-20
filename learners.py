@@ -103,18 +103,18 @@ def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared,
 
     accumulated_regret_max = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
-        + gradient * (weights - new_weights_plus_max)
+        + np.sum(gradient * (weights - new_weights_plus_max))
 
     accumulated_regret_min = accumulated_regret \
         + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_min) * psi(new_weights_plus_min) \
-        + gradient * (weights - new_weights_plus_min)
+        + np.sum(gradient * (weights - new_weights_plus_min))
 
     #Start with a Very Safe Learning Rate Update
     new_accumulated_regret = accumulated_regret_min
     new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
         L * gradients_sum_norm)
 
-    if (accumulated_regret_max <= accumulated_regret_min).any():
+    if accumulated_regret_max <= accumulated_regret_min:
         new_accumulated_regret = accumulated_regret_max
         new_one_over_eta_squared = one_over_eta_plus_max**2
 
