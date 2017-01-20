@@ -17,7 +17,8 @@ FIELDS = { \
         'total_loss': 'REAL', \
         'iterations': 'INTEGER', \
         'losses': 'JSON', \
-        'hyperparameters': 'JSON'}
+        'hyperparameters': 'JSON', \
+        'extra_data': 'JSON'}
 
 JSON_FIELDS = [_ for _ in FIELDS if FIELDS[_] == 'JSON']
 
@@ -56,21 +57,26 @@ def add_experiment(experiment_data):
     '''
     add an experiment's data into the db
     '''
-    date = time.time()
-    dataset = experiment_data['dataset']
-    learner = experiment_data['learner']
-    total_loss = experiment_data['total_loss']
-    iterations = experiment_data['iterations']
-    losses = json.dumps(experiment_data['losses'])
-    hyperparameters = json.dumps(experiment_data['hyperparameters'])
+    field_keys = FIELDS.keys()
+    field_keys = [_ for _ in field_keys if _ in experiment_data]
+    insert_item = [json.dumps(experiment_data[_]) if _ in JSON_FIELDS else \
+        experiment_data[_] for _ in field_keys]
 
-    insert_item = (date, dataset, learner, total_loss, iterations, losses, hyperparameters)
+    if 'time' not in field_keys:
+        insert_item.append(time.time())
+        field_keys.append('time')
 
-    query = "INSERT INTO experiments " + \
-     "('time', 'dataset', 'learner', 'total_loss', 'iterations', 'losses', 'hyperparameters')" + \
-     " VALUES (%s)" % (SYMBOL_PLACEHOLDER)
+    if 'extra_data' not in field_keys:
+        insert_item.append(json.dumps({}))
+        field_keys.append('extra_data')
 
-    CURSOR.executemany(query, [insert_item])
+    insert_item = [tuple(insert_item)]
+    
+    field_string = ', '.join(["'%s'" % (_) for _ in field_keys])
+
+    query = "INSERT INTO experiments (%s) VALUES (%s)" % (field_string, SYMBOL_PLACEHOLDER)
+
+    CURSOR.executemany(query, insert_item)
     CONN.commit()
 
 def select_all():

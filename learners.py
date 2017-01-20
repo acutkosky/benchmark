@@ -220,8 +220,8 @@ class FreeExpSphere(bm.Learner):
         '''return a printable string describing the status of the learner'''
         default_string = super(FreeExpSphere, self).get_status()
         increasing_learning_rates = \
-            '1/eta: %f, 1/eta without increasing learning rates: %f' % \
-            (np.sqrt(self.one_over_eta_squared), \
+            'E: %f, 1/eta: %f, 1/eta without increasing learning rates: %f' % \
+            (self.accumulated_regret, np.sqrt(self.one_over_eta_squared), \
                 np.sqrt(self.one_over_eta_squared_without_increases))
         return default_string + ' ' + increasing_learning_rates
 
@@ -283,8 +283,8 @@ class FreeExpDiag(bm.Learner):
         '''return a printable string describing the status of the learner'''
         default_string = super(FreeExpDiag, self).get_status()
         increasing_learning_rates = \
-            '1/eta: %f, 1/eta without increasing learning rates: %f' % \
-            (np.average(np.sqrt(self.one_over_eta_squared)), \
+            'E: %f, 1/eta: %f, 1/eta without increasing learning rates: %f' % \
+            (np.average(self.accumulated_regret), np.average(np.sqrt(self.one_over_eta_squared)), \
                 np.average(np.sqrt(self.one_over_eta_squared_without_increases)))
         return default_string + ' ' + increasing_learning_rates
 
