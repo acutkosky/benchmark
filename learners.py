@@ -167,145 +167,108 @@ def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
 
     return new_accumulated_regret, new_one_over_eta_squared
 
-class FreeExpSphere(bm.Learner):
+class FreeRexSphere(bm.Learner):
     '''L2 FreeExp Learner'''
     def __init__(self, shape, hyperparameters=None):
         if hyperparameters is None:
             hyperparameters = {'k': 1.0}
         hyperparameters = {'k': hyperparameters['k']}
 
-        super(FreeExpSphere, self).__init__('FreeExpSphere',hyperparameters)
+        super(FreeRexSphere, self).__init__('FreeRexSphere',hyperparameters)
 
         self.one_over_eta_squared = EPSILON
-        self.one_over_eta_squared_without_increases = 0
 
         self.k = hyperparameters['k']
+        self.a = 1
         self.L = 0
         self.gradients_sum = 0
-        self.accumulated_regret = 0
 
         self.parameter = np.zeros(shape)
 
-        self.psi = lambda w: freeexp_sphere_reg(w, self.k)
-
     def update(self, loss_info):
         '''update parameters'''
-        super(FreeExpSphere, self).update(loss_info)
+        super(FreeRexSphere, self).update(loss_info)
 
         gradient = loss_info['gradient']
         self.gradients_sum += gradient
         grad_norm = np.linalg.norm(gradient)
         gradients_sum_norm = np.linalg.norm(self.gradients_sum)
 
-        self.accumulated_regret, new_one_over_eta_squared = \
-            update_learning_rate_sphere(self.accumulated_regret, \
-                self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.gradients_sum, self.k, self.psi)
 
         self.L = np.maximum(self.L, grad_norm)
 
-        # compute a very safe learning rate update just for comparison
-        self.one_over_eta_squared_without_increases = np.maximum(self.one_over_eta_squared \
-            + 2*grad_norm**2, self.L * gradients_sum_norm)
-
-        self.one_over_eta_squared = new_one_over_eta_squared
+        self.one_over_eta_squared = np.maximum(self.one_over_eta_squared + 2 * grad_norm**2,
+                                                self.L * gradients_sum_norm)
+        self.a = np.maximum(self.a, self.one_over_eta_squared/self.L**2)
 
         self.extra_data = {'one_over_eta_squared': self.one_over_eta_squared, \
-        'one_over_eta_squared_without_increases': self.one_over_eta_squared_without_increases}
+        'a': self.a}
 
-        self.parameter = - self.gradients_sum/(gradients_sum_norm + EPSILON) \
+        self.parameter = - self.gradients_sum/(gradients_sum_norm * self.a + EPSILON) \
             * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
-        default_string = super(FreeExpSphere, self).get_status()
+        default_string = super(FreeRexSphere, self).get_status()
         increasing_learning_rates = \
-            'E: %f, 1/eta: %f, 1/eta without increasing learning rates: %f' % \
-            (self.accumulated_regret, np.sqrt(self.one_over_eta_squared), \
-                np.sqrt(self.one_over_eta_squared_without_increases))
+            '1/eta: %f' % (np.sqrt(self.one_over_eta_squared))
         return default_string + ' ' + increasing_learning_rates
 
     @staticmethod
     def hyperparameter_names():
         return ['k']
 
-class FreeExpDiag(bm.Learner):
-    '''diagonal FreeExp Learner'''
+class FreeRexDiag(bm.Learner):
+    '''diagonal FreeRex Learner'''
     def __init__(self, shape, hyperparameters=None):
         if hyperparameters is None:
             hyperparameters = {'k': 1.0}
         hyperparameters = {'k': hyperparameters['k']}
-        super(FreeExpDiag, self).__init__('FreeExpDiag', hyperparameters)
+        super(FreeRexDiag, self).__init__('FreeRexDiag', hyperparameters)
 
         self.one_over_eta_squared = np.zeros(shape) + EPSILON
-        self.one_over_eta_squared_without_increases = np.zeros(shape)
 
         self.k = hyperparameters['k']
         self.L = np.zeros(shape)
         self.gradients_sum = np.zeros(shape)
-        self.accumulated_regret = np.zeros(shape)
 
         self.parameter = np.zeros(shape)
 
         self.scaling = np.ones(shape)
+        self.a = 1.0
 
-        self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling, self.k)
+        self.max_L2 = 0.0
 
     def update(self, loss_info):
         '''update parameters'''
-        super(FreeExpDiag, self).update(loss_info)
+        super(FreeRexDiag, self).update(loss_info)
 
         gradient = loss_info['gradient']
         self.gradients_sum += gradient
         grad_norm = np.abs(gradient)
         gradients_sum_norm = np.abs(self.gradients_sum)
 
-        self.accumulated_regret, new_one_over_eta_squared = \
-            update_learning_rate_diag(self.accumulated_regret, \
-                self.L, self.one_over_eta_squared, \
-                self.parameter, gradient, self.gradients_sum, self.scaling, self.k, self.psi)
+        self.L = np.maximum(self.L, grad_norm)
 
-        self.L = np.maximum(self.L, np.abs(gradient))
+        self.max_L2 = np.maximum(self.max_L2, np.linalg.norm(gradient))
 
-        # compute a very safe learning rate update just for comparison
-        self.one_over_eta_squared_without_increases = np.maximum(self.one_over_eta_squared \
-            + 2*grad_norm**2, self.L * np.abs(gradients_sum_norm))
+        self.one_over_eta_squared = np.maximum(self.one_over_eta_squared + 2 * grad_norm**2,
+                                                self.L * gradients_sum_norm)
+        self.a = np.maximum(self.a, self.one_over_eta_squared/self.L**2)
 
-        self.one_over_eta_squared = new_one_over_eta_squared
+        self.scaling = np.maximum(self.scaling, np.sum(self.L)/self.max_L2)
 
-        self.extra_data = {'one_over_eta_squared': np.average(self.one_over_eta_squared), \
-        'one_over_eta_squared_without_increases': np.average(self.one_over_eta_squared_without_increases)}
+        self.extra_data = {'one_over_eta_squared': np.average(self.one_over_eta_squared)}
 
-        self.parameter = -np.sign(self.gradients_sum)/self.scaling \
+        self.parameter = -np.sign(self.gradients_sum)/(self.scaling * self.log_scaling) \
             * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
     def get_status(self):
         '''return a printable string describing the status of the learner'''
-        default_string = super(FreeExpDiag, self).get_status()
+        default_string = super(FreeRexDiag, self).get_status()
         increasing_learning_rates = \
-            'E: %f, 1/eta: %f, 1/eta without increasing learning rates: %f' % \
-            (np.average(self.accumulated_regret), np.average(np.sqrt(self.one_over_eta_squared)), \
-                np.average(np.sqrt(self.one_over_eta_squared_without_increases)))
+            '1/eta: %f' % (np.average(np.sqrt(self.one_over_eta_squared)))
         return default_string + ' ' + increasing_learning_rates
-
-    @staticmethod
-    def hyperparameter_names():
-        return ['k']
-
-class FreeExpScaledFeatures(FreeExpDiag):
-    '''FreeExp that scales features to be theoretically robust to many measurements.'''
-
-    def __init__(self, shape, hyperparameters=None):
-        if hyperparameters is None:
-            hyperparameters = {'k': 1.0}
-        hyperparameters = {'k': hyperparameters['k']}
-        super(FreeExpScaledFeatures, self).__init__(shape, hyperparameters)
-
-        self.name = 'FreeExpScaledFeatures'
-
-        self.scaling = np.reshape(np.arange(1, 1+len(self.parameter.flatten())), shape)
-        self.scaling = 4*self.scaling * np.log(self.scaling + 1)**2
-        self.psi = lambda weights: freeexp_diag_reg(weights, self.scaling, self.k)
 
     @staticmethod
     def hyperparameter_names():
@@ -426,6 +389,7 @@ class KTEstimatorDiag(bm.Learner):
         self.parameter = np.zeros(shape)
         self.loss_sum = np.zeros(shape)
         self.gradients_sum = np.zeros(shape)
+        self.scaling = 1.0
         self.t = 0
 
 
@@ -440,10 +404,21 @@ class KTEstimatorDiag(bm.Learner):
         self.gradients_sum += gradient
         self.loss_sum += gradient * self.parameter
         self.t += 1
-        self.parameter = - self.gradients_sum/self.t * (self.eps - self.loss_sum)
+        self.parameter = - self.gradients_sum/(self.t * self.secaling) * (self.eps - self.loss_sum)
+
+class KTEstimatorScaledFeatures(KTEstimatorDiag):
+    '''KTEstimator diagonal learner with features scaled by dimension'''
+    def __init__(self, shape, hyperparameters=None):
+        super(KTEstimatorScaledFeatures, self).__init__(shape, hyperparameters)
+        self.name = 'KTEstimatorScaledFeatures'
+        self.scaling = 1.0/len(self.parameter.flatten())
+
+    @staticmethod
+    def hyperparameter_names():
+        return ['L']
 
 #set default use of FreeExp to be diag
-FreeExp = FreeExpDiag
+FreeRex = FreeRexDiag
 
 #set default use of PiSTOL to be diag
 PiSTOL = PiSTOLDiag
