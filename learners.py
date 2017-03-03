@@ -61,111 +61,8 @@ class AdaGrad(bm.Learner):
     def hyperparameter_names():
         return ['D']
 
-
-def freeexp_diag_reg(w, scaling, k):
-    '''regularizer used for diagonal freeexp'''
-    abs_w = np.abs(w*scaling)
-    return k/scaling * ((abs_w + 1)*np.log(abs_w + 1) - abs_w)
-
-def freeexp_sphere_reg(w, k):
-    ''''regularizer used for l2 freeexp'''
-    norm_w = np.linalg.norm(w)
-    return k * ((norm_w + 1)*np.log(norm_w + 1) - norm_w)
-
-def update_learning_rate_sphere(accumulated_regret, old_L, one_over_eta_squared, \
-    weights, gradient, gradients_sum, k, psi):
-    '''Computes aggressive learning rate updates by measuring
-    discrepencies between regret bounds.
-    Will increase learning rates without compromising worst-case
-    performance when possible.'''
-
-
-    grad_norm = np.linalg.norm(gradient)
-    L = np.maximum(old_L, grad_norm)
-    if old_L == 0:
-        old_L = L
-
-    gradients_sum_norm = np.linalg.norm(gradients_sum)
-    one_over_eta_plus_max = np.sqrt(np.maximum( \
-            np.maximum(one_over_eta_squared - 2 * grad_norm \
-                * np.minimum(old_L, grad_norm), \
-            L * gradients_sum_norm), \
-        2 * grad_norm**2 + EPSILON))
-
-    one_over_eta_plus_min = np.sqrt(np.maximum(one_over_eta_squared + 2 * grad_norm \
-            * np.minimum(old_L, grad_norm), \
-        old_L * gradients_sum_norm))
-
-    new_weights_plus_max = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1.0)
-    new_weights_plus_min = - (gradients_sum)/(gradients_sum_norm + EPSILON) \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1.0)
-
-    accumulated_regret_max = accumulated_regret \
-        + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
-        + np.sum(gradient * (weights - new_weights_plus_max))
-
-    accumulated_regret_min = accumulated_regret \
-        + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_min) * psi(new_weights_plus_min) \
-        + np.sum(gradient * (weights - new_weights_plus_min))
-
-    #Start with a Very Safe Learning Rate Update
-    new_accumulated_regret = accumulated_regret_min
-    new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
-        L * gradients_sum_norm)
-
-    if accumulated_regret_max <= accumulated_regret_min:
-        new_accumulated_regret = accumulated_regret_max
-        new_one_over_eta_squared = one_over_eta_plus_max**2
-
-    return new_accumulated_regret, new_one_over_eta_squared
-
-def update_learning_rate_diag(accumulated_regret, old_L, one_over_eta_squared, \
-    weights, gradient, gradients_sum, scaling, k, psi):
-    '''Computes aggressive learning rate updates by measuring
-    discrepencies between regret bounds.
-    Will increase learning rates without compromising worst-case
-    performance when possible.'''
-
-    grad_norm = np.abs(gradient)
-    L = np.maximum(old_L, grad_norm)
-    old_L[old_L==0] = L[old_L==0]
-
-    gradients_sum_norm = np.abs(gradients_sum)
-    one_over_eta_plus_max = np.sqrt(np.maximum( \
-            np.maximum(one_over_eta_squared - 2 * grad_norm \
-                * np.minimum(old_L, grad_norm), \
-            L * gradients_sum_norm), \
-        2 * grad_norm**2 + EPSILON))
-
-    one_over_eta_plus_min = np.sqrt(np.maximum(one_over_eta_squared + 2 * grad_norm \
-            * np.minimum(old_L, grad_norm), \
-        old_L * gradients_sum_norm))
-
-    new_weights_plus_max = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_max)) - 1.0)
-    new_weights_plus_min = -np.sign(gradients_sum)/scaling \
-        * (np.exp(gradients_sum_norm/(k * one_over_eta_plus_min)) - 1.0)
-
-    accumulated_regret_max = accumulated_regret \
-        + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_max) * psi(new_weights_plus_max) \
-        + gradient * (weights - new_weights_plus_max)
-
-    accumulated_regret_min = accumulated_regret \
-        + (np.sqrt(one_over_eta_squared) - one_over_eta_plus_min) * psi(new_weights_plus_min) \
-        + gradient * (weights - new_weights_plus_min)
-
-    #Start with a Very Safe Learning Rate Update
-    new_accumulated_regret = accumulated_regret_min
-    new_one_over_eta_squared = np.maximum(one_over_eta_squared + 2*grad_norm**2, \
-        L * gradients_sum_norm)
-
-    increasable_indices = accumulated_regret_max <= accumulated_regret_min
-    # Careful - we're overwriting accumulated_regret_min here!
-    new_accumulated_regret[increasable_indices] = accumulated_regret_max[increasable_indices]
-    new_one_over_eta_squared[increasable_indices] = one_over_eta_plus_max[increasable_indices]**2
-
-    return new_accumulated_regret, new_one_over_eta_squared
+def xlogsquaredx(x):
+    return x*np.log(x+np.e)**2
 
 class FreeRexSphere(bm.Learner):
     '''L2 FreeExp Learner'''
@@ -199,7 +96,7 @@ class FreeRexSphere(bm.Learner):
 
         self.one_over_eta_squared = np.maximum(self.one_over_eta_squared + 2 * grad_norm**2,
                                                 self.L * gradients_sum_norm)
-        self.a = np.maximum(self.a, self.one_over_eta_squared/self.L**2)
+        self.a = np.maximum(self.a, np.sqrt(self.one_over_eta_squared)/self.L)
 
         self.extra_data = {'one_over_eta_squared': self.one_over_eta_squared, \
         'a': self.a}
@@ -226,18 +123,18 @@ class FreeRexDiag(bm.Learner):
         hyperparameters = {'k': hyperparameters['k']}
         super(FreeRexDiag, self).__init__('FreeRexDiag', hyperparameters)
 
-        self.one_over_eta_squared = np.zeros(shape) + EPSILON
+        self.one_over_eta_squared = np.zeros(shape) + EPSILON**2
 
         self.k = hyperparameters['k']
-        self.L = np.zeros(shape)
+        self.L = np.zeros(shape) + EPSILON
         self.gradients_sum = np.zeros(shape)
 
         self.parameter = np.zeros(shape)
 
-        self.scaling = np.ones(shape)
-        self.a = 1.0
+        self.scaling = 1.0
+        self.a = np.ones(shape)
 
-        self.max_L2 = 0.0
+        self.max_L2 = EPSILON
 
     def update(self, loss_info):
         '''update parameters'''
@@ -254,13 +151,13 @@ class FreeRexDiag(bm.Learner):
 
         self.one_over_eta_squared = np.maximum(self.one_over_eta_squared + 2 * grad_norm**2,
                                                 self.L * gradients_sum_norm)
-        self.a = np.maximum(self.a, self.one_over_eta_squared/self.L**2)
+        self.a = np.maximum(self.a, np.sqrt(self.one_over_eta_squared)/self.L)
 
         self.scaling = np.maximum(self.scaling, np.sum(self.L)/self.max_L2)
 
         self.extra_data = {'one_over_eta_squared': np.average(self.one_over_eta_squared)}
 
-        self.parameter = -np.sign(self.gradients_sum)/(self.scaling * self.log_scaling) \
+        self.parameter = -np.sign(self.gradients_sum)/(self.scaling * self.a) \
             * (np.exp(gradients_sum_norm/(self.k * np.sqrt(self.one_over_eta_squared))) - 1.0)
 
     def get_status(self):
