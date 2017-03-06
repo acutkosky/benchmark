@@ -115,6 +115,21 @@ class FreeRexSphere(bm.Learner):
     def hyperparameter_names():
         return ['k']
 
+class FreeRexSphereMomentum(FreeRexSphere):
+    def __init__(self, shape, hyperparameters=None):
+        super(FreeRexSphereMomentum, self).__init__('FreeRexSphereMomentum', hyperparameters)
+        self.grad_norm_sum = 1.0
+        self.accumulated_parameters = np.zeros(shape)
+
+    def update(self, loss_info):
+        grad_norm = np.linalg.norm(loss_info['gradient'])
+        self.grad_norm_sum += grad_norm
+        self.accumulated_parameters += grad_norm * self.parameter
+        super(FreeRexSphereMomentum, self).update(loss_info)
+
+    def predict(self, prediction_info):
+        return self.parameter + self.accumulated_parameters/self.grad_norm_sum
+
 class FreeRexDiag(bm.Learner):
     '''diagonal FreeRex Learner'''
     def __init__(self, shape, hyperparameters=None):
@@ -170,6 +185,22 @@ class FreeRexDiag(bm.Learner):
     @staticmethod
     def hyperparameter_names():
         return ['k']
+
+class FreeRexDiagMomentum(FreeRexDiag):
+    def __init__(self, shape, hyperparameters=None):
+        super(FreeRexDiagMomentum, self).__init__('FreeRexDiagMomentum', hyperparameters)
+        self.grad_norm_sum = np.ones(shape)
+        self.accumulated_parameters = np.zeros(shape)
+
+    def update(self, loss_info):
+        grad_norm += np.abs(loss_info['gradient'])
+        self.grad_norm_sum += grad_norm
+        self.accumulated_parameters += grad_norm * self.parameter
+        super(FreeRexDiagMomentum, self).update(loss_info)
+
+    def predict(self, prediction_info):
+        return self.parameter + self.accumulated_parameters/self.grad_norm_sum
+
 
 class PiSTOLSphere(bm.Learner):
     '''PiSTOL spherical learner'''
