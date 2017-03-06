@@ -117,7 +117,8 @@ class FreeRexSphere(bm.Learner):
 
 class FreeRexSphereMomentum(FreeRexSphere):
     def __init__(self, shape, hyperparameters=None):
-        super(FreeRexSphereMomentum, self).__init__('FreeRexSphereMomentum', shape, hyperparameters)
+        super(FreeRexSphereMomentum, self).__init__(shape, hyperparameters)
+        self.name = 'FreeRexSphereMomentum'
         self.grad_norm_sum = 1.0
         self.accumulated_parameters = np.zeros(shape)
 
@@ -188,7 +189,8 @@ class FreeRexDiag(bm.Learner):
 
 class FreeRexDiagMomentum(FreeRexDiag):
     def __init__(self, shape, hyperparameters=None):
-        super(FreeRexDiagMomentum, self).__init__('FreeRexDiagMomentum', shape, hyperparameters)
+        super(FreeRexDiagMomentum, self).__init__(shape, hyperparameters)
+        self.name = 'FreeRexDiagMomentum'
         self.grad_norm_sum = np.ones(shape)
         self.accumulated_parameters = np.zeros(shape)
 
