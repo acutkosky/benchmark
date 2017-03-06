@@ -45,6 +45,10 @@ class Learner(object):
         self.total_gradient_norm += np.linalg.norm(loss_info['gradient'])
         return
 
+    def dataset_initialization(self, dataset):
+        '''extract some parameters from the dataset (like dataset size) if necessary'''
+        pass
+
     def predict(self, predict_info):
         '''output a prediction based on input from predict_info, which is some context.
         In a pure online-learning setup, predict_info is always ignored.
@@ -246,6 +250,7 @@ def run_learner(learner, dataset, status_interval=30):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         try:
+            learner.dataset_initialize(dataset)
             for predict_info, get_loss_info in dataset.get_infos():
                 if time.time() > last_status_time + status_interval:
                     last_status_time = time.time()
