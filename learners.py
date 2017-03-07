@@ -373,7 +373,7 @@ class KTEstimatorScaledFeatures(KTEstimatorDiag):
 
     def dataset_initialize(self, dataset):
         super(KTEstimatorScaledFeatures, self).dataset_initialize(dataset)
-        self.scaling = 1.0/len(self.parameter.flatten())
+        self.scaling = len(self.parameter.flatten())
 
     @staticmethod
     def hyperparameter_names():
