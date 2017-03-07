@@ -45,7 +45,7 @@ class Learner(object):
         self.total_gradient_norm += np.linalg.norm(loss_info['gradient'])
         return
 
-    def dataset_initialization(self, dataset):
+    def dataset_initialize(self, dataset):
         '''extract some parameters from the dataset (like dataset size) if necessary'''
         pass
 
@@ -308,10 +308,11 @@ def search_hyperparameters(learner_factory, dataset, search_list):
     into learner.
     '''
     for hyperparameters in search_list:
-        learner = learner_factory(dataset.shape, hyperparameters)
-        found_experiment = lookup_experiment(dataset.name, learner.name, hyperparameters) 
+        learner = learner_factory(hyperparameters)
+        found_experiment = lookup_experiment(dataset.name, learner.name, hyperparameters)
         if found_experiment is None:
-            print 'Uncached result - running experiment'
+            print 'Uncached result - running experiment:'
+            print 'learner: %s, dataset: %s, hyperparameters: %s' % (learner.name, dataset.name, str(learner.hyperparameters))
             run_learner(learner, dataset)
         else:
             print 'Cached result:'
