@@ -201,6 +201,15 @@ class FreeRexDiag(bm.Learner):
     def hyperparameter_names():
         return ['k']
 
+class FreeRexDiagL1(FreeRexDiag):
+    def __init__(self, hyperparameters=None):
+        super(FreeRexDiagL1, self).__init__(hyperparameters)
+        self.name = 'FreeRexDiagL1'
+
+    def dataset_initialize(self, dataset):
+        super(FreeRexDiagL1, self).dataset_initialize(dataset)
+        self.a = np.ones(dataset.shape) * len(dataset.flatten())
+
 class FreeRexDiagMomentum(FreeRexDiag):
     def __init__(self, hyperparameters=None):
         super(FreeRexDiagMomentum, self).__init__(hyperparameters)
@@ -221,6 +230,14 @@ class FreeRexDiagMomentum(FreeRexDiag):
     def predict(self, prediction_info):
         return self.parameter + self.accumulated_parameters/self.grad_norm_sum
 
+class FreeRexDiagL1Momentum(FreeRexDiagMomentum):
+    def __init__(self, hyperparameters=None):
+        super(FreeRexDiagL1Momentum, self).__init__(hyperparameters)
+        self.name = 'FreeRexDiagL1Momentum'
+
+    def dataset_initialize(self, dataset):
+        super(FreeRexDiagL1Momentum, self).dataset_initialize(dataset)
+        self.a = np.ones(dataset.shape) * len(dataset.flatten())
 
 class PiSTOLSphere(bm.Learner):
     '''PiSTOL spherical learner'''
