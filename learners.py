@@ -205,7 +205,8 @@ class FreeRexDiagL1(FreeRexDiag):
 
     def dataset_initialize(self, dataset):
         super(FreeRexDiagL1, self).dataset_initialize(dataset)
-        self.a = np.ones(dataset.shape) * len(dataset.flatten())
+        dimensions = np.prod(dataset.shape)
+        self.a = np.ones(dataset.shape) * dimensions
 
 class FreeRexDiagMomentum(FreeRexDiag):
     def __init__(self, hyperparameters=None):
@@ -234,7 +235,8 @@ class FreeRexDiagL1Momentum(FreeRexDiagMomentum):
 
     def dataset_initialize(self, dataset):
         super(FreeRexDiagL1Momentum, self).dataset_initialize(dataset)
-        self.a = np.ones(dataset.shape) * len(dataset.flatten())
+        dimensions = np.prod(dataset.shape)
+        self.a = np.ones(dataset.shape) * dimensions
 
 class PiSTOLSphere(bm.Learner):
     '''PiSTOL spherical learner'''
